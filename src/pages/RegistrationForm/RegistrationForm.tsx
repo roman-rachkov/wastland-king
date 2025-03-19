@@ -36,7 +36,7 @@ const RegistrationForm = () => {
                 <Row>
                   <Col md={4}>
                     <FormLabel>Whats your name?</FormLabel>
-                    <FormControl name={'name'}/>
+                    <FormControl name={'name'} placeholder={'nickname'}/>
                   </Col>
                 </Row>
               </FormGroup>
@@ -45,7 +45,7 @@ const RegistrationForm = () => {
                   <Col className={'d-flex flex-column'} md={4}>
                     <FormLabel>Please enter your alliance alias</FormLabel>
                     <Image src={wak} className={'w-100 mb-2'} loading="lazy"/>
-                    <FormControl name={'alliance'}/>
+                    <FormControl name={'alliance'} placeholder={'ALI'}/>
                   </Col>
                 </Row>
               </FormGroup>
@@ -82,10 +82,10 @@ const RegistrationForm = () => {
                 <Row>
                   <Col>
                     <FormLabel>Troop Tier</FormLabel>
-                    <FormCheck name={'troop-tier'} type={'radio'} label={'T10'}/>
-                    <FormCheck name={'troop-tier'} type={'radio'} label={'T11'}/>
-                    <FormCheck name={'troop-tier'} type={'radio'} label={'T12'}/>
-                    <FormCheck name={'troop-tier'} type={'radio'} label={'T13'}/>
+                    <FormCheck name={'troop-tier'} type={'radio'} label={'T10'} value={10}/>
+                    <FormCheck name={'troop-tier'} type={'radio'} label={'T11'} value={11}/>
+                    <FormCheck name={'troop-tier'} type={'radio'} label={'T12'} value={12}/>
+                    <FormCheck name={'troop-tier'} type={'radio'} label={'T13'} value={13}/>
                   </Col>
                 </Row>
               </FormGroup>
@@ -94,7 +94,7 @@ const RegistrationForm = () => {
                   <Col md={4}>
                     <FormLabel>March size?</FormLabel>
                     <Image src={marchSize} className={'w-100 mb-2'} loading="lazy"/>
-                    <FormControl name={'size'}/>
+                    <FormControl name={'size'} placeholder={'264000'}/>
                   </Col>
                 </Row>
               </FormGroup>
@@ -129,11 +129,13 @@ const RegistrationForm = () => {
                   <FormText>
                     Captains are required to spend 2000 Diamonds for super reinforcement at minimum.
                   </FormText>
-                  <Col className={'d-flex mb-2'} md={3}>
-                    <FormCheck name={'troop-tier'} className={'me-2'} type={'radio'} label={'Yes'}/>
-                    <FormCheck name={'troop-tier'} type={'radio'} label={'No'}/>
+                  <Col className={'d-flex mb-2'} md={4}>
+                    <FormCheck name={'is-capitan'} className={'me-2'} type={'radio'} label={'Yes'} value={'true'}/>
+                    <FormCheck name={'is-capitan'} type={'radio'} label={'No'} value={'false'}/>
                   </Col>
-                  <Image src={capitan} className={'w-50 mb-2'} loading="lazy"/>
+                  <Col md={4}>
+                    <Image src={capitan} className={'w-100 mb-2'} loading="lazy"/>
+                  </Col>
                 </Row>
 
               </FormGroup>
@@ -141,7 +143,7 @@ const RegistrationForm = () => {
                 <Col className={'d-flex flex-column'} md={4}>
                   <FormLabel>Rally Size - Correct Size</FormLabel>
                   <Image src={rallySize} className={'w-100 mb-2'} loading="lazy"/>
-                  <FormControl name={'rally-size'}/>
+                  <FormControl name={'rally-size'} placeholder={'1130000'}/>
                 </Col>
               </Row>
             </Form>

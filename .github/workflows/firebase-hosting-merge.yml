@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set Node.js 18.18
+      - name: Set Node.js 22.0.0
         uses: actions/setup-node@v3
         with:
-          node-version: 18.18.2
+          node-version: 22.0.0
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
