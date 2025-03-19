@@ -30,7 +30,7 @@ const RegistrationForm = () => {
           <Card.Header>
             <h2>Registration Form</h2>
           </Card.Header>
-          <Card.Body className={'z-0'}>
+          <Card.Body>
             <Form>
               <FormGroup className={'mb-4'}>
                 <Row>

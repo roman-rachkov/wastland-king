@@ -1,10 +1,11 @@
-import {Container} from "react-bootstrap";
+import {Container, Row} from "react-bootstrap";
 import HeaderBanner from "./Components/HeaderBaner";
 import RegistrationForm from "./pages/RegistrationForm";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {BrowserRouter, Route, Routes} from "react-router";
 import AdminMain from "./pages/admin/Main";
+import {GoogleTranslate} from "./Components/GoogleTranslate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,7 +19,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Container>
+      <Container className={'position-relative'}>
         <HeaderBanner/>
         <BrowserRouter>
           <Routes>
@@ -28,8 +29,16 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        <Row className="footer sticky-bottom">
+          <div className="transtale">
+            <GoogleTranslate/>
+          </div>
+          <ReactQueryDevtools initialIsOpen={false}/>
+
+        </Row>
+
+
       </Container>
-      <ReactQueryDevtools initialIsOpen={false}/>
     </QueryClientProvider>
   )
 }
