@@ -11,4 +11,18 @@
 
 .card{
   --bs-card-cap-bg: #f6f6f6;
+  &-footer{
+    &.sticky-bottom{
+      bottom: 60px;
+    }
+  }
+}
+
+.footer{
+  background: white;
+  height: 60px;
+}
+
+.transtale{
+  max-width: fit-content;
 }
