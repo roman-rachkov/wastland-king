@@ -1,0 +1,14 @@
+.form-label {
+  font-weight: bold;
+  &:has(+ .form-text){
+    margin-bottom: 0;
+  }
+  &+.form-text{
+    margin-top: 0;
+    margin-bottom: .5rem;
+  }
+}
+
+.card{
+  --bs-card-cap-bg: #f6f6f6;
+}
