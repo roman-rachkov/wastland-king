@@ -1,4 +1,4 @@
-import {useForm} from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 import {Player} from "../../types/Player.ts";
 import {useEffect, useState} from 'react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -42,8 +42,12 @@ const RegistrationForm = () => {
     watch,
     reset,
     getValues,
+    control,
     formState: {errors}
-  } = useForm<Player>({mode: 'onChange'});
+  } = useForm<Player>({mode: 'onChange', defaultValues:{
+      troopTier: undefined,
+      isCapitan: false,
+    }});
 // Состояния для Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -161,7 +165,10 @@ const RegistrationForm = () => {
       setToastMessage(variables.id ? '🎉 Player updated successfully!' : '✨ New player created!');
       setToastVariant('success');
       setShowToast(true);
-      reset();
+      reset({
+        troopTier: undefined,
+        isCapitan: false,
+      });
     },
     onError: (error) => {
       setToastMessage(`⚠️ Error: ${error.message}`);
@@ -317,26 +324,32 @@ const RegistrationForm = () => {
                   <Row>
                     <Col>
                       <FormLabel>Troop Tier</FormLabel>
-                      {[10, 11, 12, 13].map((tier) => (
-                        <FormCheck
-                          key={tier}
-                          {...register('troopTier', {
-                            required: 'Troop tier is required',
-                            valueAsNumber: true
-                          })}
-                          type='radio'
-                          label={`T${tier}`}
-                          value={tier}
-                          isInvalid={!!errors.troopTier}
-                          checked={watch('troopTier') === tier}
-                        />
-                      ))}
+                      <Controller
+                        name="troopTier"
+                        control={control}
+                        rules={{ required: 'Troop tier is required' }}
+                        render={({ field }) => (
+                          <div className="d-flex gap-3">
+                            {[10, 11, 12, 13].map((tier) => (
+                              <FormCheck
+                                key={tier}
+                                type="radio"
+                                label={`T${tier}`}
+                                id={`tier-${tier}`}
+                                checked={field.value === tier}
+                                onChange={() => field.onChange(tier)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      />
                       {errors.troopTier && (
                         <Form.Text className='text-danger'>{errors.troopTier.message}</Form.Text>
                       )}
                     </Col>
                   </Row>
                 </FormGroup>
+
                 {/* Размер отряда */}
                 <FormGroup className='mb-4'>
                   <Row>
@@ -394,27 +407,33 @@ const RegistrationForm = () => {
                 <FormGroup className='mb-4'>
                   <Row className='flex-column'>
                     <FormLabel>Are you available to captain a turret?</FormLabel>
+                    <FormText>Stronger players encoraged to take 1st shift</FormText>
                     <Col className='d-flex mb-2' md={4}>
-                      {[true, false].map((value) => (
-                        <FormCheck
-                          key={value.toString()}
-                          {...register('isCapitan', {
-                            setValueAs: (v) => v === 'true'
-                          })}
-                          type='radio'
-                          label={value ? 'Yes' : 'No'}
-                          value={value.toString()}
-                          isInvalid={!!errors.isCapitan}
-                          checked={watch('isCapitan') === value}
-                        />
-                      ))}
+                      <Controller
+                        name="isCapitan"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="d-flex gap-3">
+                            {[true, false].map((value) => (
+                              <FormCheck
+                                key={value.toString()}
+                                type="radio"
+                                label={value ? 'Yes' : 'No'}
+                                id={`captain-${value}`}
+                                checked={field.value === value}
+                                onChange={() => field.onChange(value)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      />
                     </Col>
                     <Col md={4}>
                       <Image src={capitan} className='w-100 mb-2' loading='lazy'/>
-
                     </Col>
                   </Row>
                 </FormGroup>
+
 
                 {/* Размер отряда для капитана */}
                 <Row className='mb-4'>
