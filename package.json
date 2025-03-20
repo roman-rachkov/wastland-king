@@ -25,7 +25,8 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "react-router": "^7.3.0",
-    "sass": "^1.86.0"
+    "sass": "^1.86.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
