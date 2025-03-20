@@ -6,6 +6,7 @@ import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {BrowserRouter, Route, Routes} from "react-router";
 import AdminMain from "./pages/admin/Main";
 import {GoogleTranslate} from "./Components/GoogleTranslate";
+import ThanksPage from "./pages/ThanksPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route index path={'/'} element={<RegistrationForm/>}/>
+            <Route index path={'/thanks'} element={<ThanksPage/>}/>
             <Route path={'admin'}>
               <Route index element={<AdminMain/>}/>
             </Route>

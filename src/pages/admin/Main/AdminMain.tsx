@@ -7,9 +7,16 @@ import {DateTime} from 'luxon';
 
 // 3. Создаем компонент таблицы
 import {useQuery} from '@tanstack/react-query';
-import {ColumnDef, flexRender, getCoreRowModel, useReactTable,} from '@tanstack/react-table';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
 import {db} from "../../../services/firebase.ts";
-import {Table} from "react-bootstrap";
+import {Button, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 
 
@@ -18,6 +25,8 @@ const columns: ColumnDef<Player>[] = [
   {
     header: 'ID',
     accessorKey: 'id',
+    id: 'id',
+    sortDescFirst: false,
   },
   {
     header: 'Created At',
@@ -85,6 +94,16 @@ function AdminMain() {
     data: data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      sorting: [
+        {
+          id: 'id',
+          desc: false, // sort by name in descending order by default
+        },
+      ],
+    },
   });
 
   if (isLoading) return <div>Loading...</div>;
@@ -122,6 +141,44 @@ function AdminMain() {
         ))}
         </tbody>
       </Table>
+      <Pagination>
+        <Pagination.Item
+          onClick={() => table.firstPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {'<<'}
+        </Pagination.Item>
+        <Pagination.Item
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {'<'}
+        </Pagination.Item>
+        <Pagination.Item
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>'}
+        </Pagination.Item>
+        <Pagination.Item
+          onClick={() => table.lastPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>>'}
+        </Pagination.Item>
+        <select
+          value={table.getState().pagination.pageSize}
+          onChange={e => {
+            table.setPageSize(Number(e.target.value))
+          }}
+        >
+          {[10, 20, 30, 40, 50].map(pageSize => (
+            <option key={pageSize} value={pageSize}>
+              {pageSize}
+            </option>
+          ))}
+        </select>
+      </Pagination>
     </div>
   );
 }

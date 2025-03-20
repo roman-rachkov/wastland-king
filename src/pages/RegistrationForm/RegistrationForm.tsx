@@ -32,8 +32,13 @@ import firstShift from "../../assets/images/1-shift.png";
 import secondShift from "../../assets/images/2-shift.png";
 import capitan from "../../assets/images/capitan.png";
 import rallySize from "../../assets/images/rally-size.jpg";
-
+import {useNavigate} from "react-router";
+type FormErrors = {
+  troopTypes?: { message: string };
+  shifts?: { message: string };
+} & Player;
 const RegistrationForm = () => {
+  const navigate = useNavigate()
   const queryClient = useQueryClient();
   const {
     register,
@@ -43,8 +48,10 @@ const RegistrationForm = () => {
     reset,
     getValues,
     control,
+    setError,
+    clearErrors,
     formState: {errors}
-  } = useForm<Player>({mode: 'onChange', defaultValues:{
+  } = useForm<FormErrors>({mode: 'onChange', defaultValues:{
       troopTier: undefined,
       isCapitan: false,
     }});
@@ -101,11 +108,11 @@ const RegistrationForm = () => {
       setValue('isCapitan', existingData.isCapitan);
     }
   }, [existingData, setValue]);
-  // Валидация типов войск
-  const validateTroopTypes = () => {
-    const {troopFighter, troopShooter, troopRider} = getValues();
-    return troopFighter || troopShooter || troopRider;
-  };
+  // // Валидация типов войск
+  // const validateTroopTypes = () => {
+  //   const {troopFighter, troopShooter, troopRider} = getValues();
+  //   return troopFighter || troopShooter || troopRider;
+  // };
 
   // Валидация смен
   const validateShifts = () => {
@@ -169,6 +176,7 @@ const RegistrationForm = () => {
         troopTier: undefined,
         isCapitan: false,
       });
+      navigate('/thanks')
     },
     onError: (error) => {
       setToastMessage(`⚠️ Error: ${error.message}`);
@@ -196,6 +204,20 @@ const RegistrationForm = () => {
   };
 
   const onSubmit = (data: Player) => {
+    if (!data.troopFighter && !data.troopShooter && !data.troopRider) {
+      setError('troopTypes', {
+        type: 'manual',
+        message: 'Select at least one troop type'
+      });
+      return;
+    }
+    if (!validateShifts()) {
+      setError('shifts', {
+        type: 'manual',
+        message: 'Select at least one shift'
+      });
+      return;
+    }
     mutation.mutate(data);
   };
 
@@ -286,36 +308,46 @@ const RegistrationForm = () => {
                 <FormGroup>
                   <Row className='mb-4'>
                     <FormLabel>Troop type</FormLabel>
-                    {['Fighter', 'Shooter', 'Rider'].map((type) => {
-                        const fieldName = `troop${type}` as keyof Player;
-                        return (
-                          <Col key={type} className='d-flex flex-column' md={1} xs={4}>
-                            <Row>
-                              <Col xs={1}>
-                                <FormCheck
-                                  {...register(fieldName, {
-                                    validate: () => validateTroopTypes() || 'Select at least one troop type'
-                                  })}
-                                  type='checkbox'
-                                  label={type}
-                                  isInvalid={!!errors[fieldName]}
-                                />
-                              </Col>
-                            </Row>
-                            <Image
-                              src={type === 'Fighter' ? fighter : type === 'Shooter' ? shooter : rider}
-                              className='w-100 mb-2'
-                              loading='lazy'
-                            />
-                          </Col>
-                        )
-                      }
-                    )}
-                    {errors.troopFighter && (
-                      <Form.Text className='text-danger d-block'>
-                        {errors.troopFighter.message}
+                    {/* @ts-ignore */}
+                    {errors.troopTypes && (
+                      <Form.Text className='text-danger d-block mb-2'>
+                        {/* @ts-ignore */}
+                        {errors.troopTypes.message}
                       </Form.Text>
                     )}
+
+                    {['Fighter', 'Shooter', 'Rider'].map((type) => {
+                      const fieldName = `troop${type}` as keyof Player;
+                      return (
+                        <Col key={type} className='d-flex flex-column' md={1} xs={4}>
+                          <Controller
+                            name={fieldName}
+                            control={control}
+                            render={({ field }) => (
+                              <>
+                                <FormCheck
+                                  {...field}
+                                  type='checkbox'
+                                  label={type}
+                                  checked={!!field.value} // Явное приведение к boolean
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (errors.troopTypes) {
+                                      clearErrors("troopTypes" as keyof FormErrors);
+                                    }
+                                  }}
+                                />
+                                <Image
+                                  src={type === 'Fighter' ? fighter : type === 'Shooter' ? shooter : rider}
+                                  className='w-100 mb-2'
+                                  loading='lazy'
+                                />
+                              </>
+                            )}
+                          />
+                        </Col>
+                      );
+                    })}
                   </Row>
                 </FormGroup>
 
@@ -377,6 +409,14 @@ const RegistrationForm = () => {
                   <Row>
                     <FormLabel>Availability</FormLabel>
                     <FormText>Stronger players encoraged to take 1st shift</FormText>
+                    {/* Общая ошибка для смен */}
+                    {/* @ts-ignore */}
+                    {errors.shifts && (
+                      <Form.Text className='text-danger d-block mb-2'>
+                        {/* @ts-ignore */}
+                        {errors.shifts.message}
+                      </Form.Text>
+                    )}
                     {[['firstShift', firstShift], ['secondShift', secondShift]].map(([field, img]) => (
                       <Col key={field} className='d-flex flex-column' md={3} xs={6}>
                         <Row>
@@ -407,7 +447,7 @@ const RegistrationForm = () => {
                 <FormGroup className='mb-4'>
                   <Row className='flex-column'>
                     <FormLabel>Are you available to captain a turret?</FormLabel>
-                    <FormText>Stronger players encoraged to take 1st shift</FormText>
+                    <FormText>Captains are required to spend 2000 Diamonds for super reinforcement at minimum.</FormText>
                     <Col className='d-flex mb-2' md={4}>
                       <Controller
                         name="isCapitan"
