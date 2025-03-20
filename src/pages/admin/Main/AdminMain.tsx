@@ -16,9 +16,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import {db} from "../../../services/firebase.ts";
-import {Button, Pagination, Table} from "react-bootstrap";
+import {Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
-
 
 
 const columns: ColumnDef<Player>[] = [
