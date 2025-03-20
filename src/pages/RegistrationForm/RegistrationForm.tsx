@@ -325,6 +325,7 @@ const RegistrationForm = () => {
                             control={control}
                             render={({ field }) => (
                               <>
+                                {/* @ts-ignore*/}
                                 <FormCheck
                                   {...field}
                                   type='checkbox'
