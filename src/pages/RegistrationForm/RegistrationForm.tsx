@@ -52,8 +52,11 @@ const RegistrationForm = () => {
     clearErrors,
     formState: {errors}
   } = useForm<FormErrors>({mode: 'onChange', defaultValues:{
-      troopTier: undefined,
+      troopTier: 10,
       isCapitan: false,
+      troopFighter: false,
+      troopRider: false,
+      troopShooter: false,
     }});
 // Состояния для Toast
   const [showToast, setShowToast] = useState(false);
