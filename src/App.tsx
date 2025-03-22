@@ -7,6 +7,7 @@ import {BrowserRouter, Route, Routes} from "react-router";
 import AdminMain from "./pages/admin/Main";
 import {GoogleTranslate} from "./Components/GoogleTranslate";
 import ThanksPage from "./pages/ThanksPage";
+import SchedulePage from "./pages/Schedule";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +27,7 @@ function App() {
           <Routes>
             <Route index path={'/'} element={<RegistrationForm/>}/>
             <Route index path={'/thanks'} element={<ThanksPage/>}/>
+            <Route index path={'/schedule'} element={<SchedulePage/>}/>
             <Route path={'admin'}>
               <Route index element={<AdminMain/>}/>
             </Route>
