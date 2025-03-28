@@ -3,51 +3,71 @@ import headerBg from "../../assets/images/header.jpg";
 import CountdownTimer from "./Countdowntimer.tsx";
 import {DateTime} from "luxon";
 import {db} from "../../services/firebase.ts";
-import {doc, getDoc, Timestamp, updateDoc} from "firebase/firestore";
+import {doc, getDoc, updateDoc} from "firebase/firestore";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 
-const fetchLastWastelandDate = async () => {
-  const docRef = doc(db, 'counters', 'last_wasteland_event');
+interface EventDates {
+  lastDate: Date;
+  nextDate: Date;
+}
+// Функция получения дат
+const fetchWastelandDates = async (): Promise<EventDates> => {
+  const docRef = doc(db, 'counters','wasteland_event');
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) {
     throw new Error('Document not found');
   }
 
-  return (docSnap.data().date as Timestamp).toDate(); // Возвращаем значение поля date
+  const data = docSnap.data();
+  return {
+    lastDate: data.lastDate.toDate(),
+    nextDate: data.nextDate.toDate()
+  };
 };
 
 // Функция обновления даты
-const updateWastelandDate = async (newDate: Date) => {
-  const docRef = doc(db, 'counters', 'last_wasteland_event');
+const updateWastelandDates = async (newDates: EventDates) => {
+  const docRef = doc(db, 'counters', 'wasteland_event');
   await updateDoc(docRef, {
-    date: newDate
+    lastDate: newDates.lastDate,
+    nextDate: newDates.nextDate
   });
 };
 
 const HeaderBanner = () => {
   const queryClient = useQueryClient();
-  const {data: lastDate, isLoading, isError, error} = useQuery({
-    queryKey: ['lastWastelandDate'], // Уникальный ключ запроса
-    queryFn: fetchLastWastelandDate // Функция запроса
+
+  // Получение данных
+  const { data: dates, isLoading, isError, error } = useQuery({
+    queryKey: ['wastelandDates'],
+    queryFn: fetchWastelandDates
   });
 
   // Мутация для обновления
   const { mutate } = useMutation({
-    mutationFn: updateWastelandDate,
+    mutationFn: updateWastelandDates,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lastWastelandDate'] });
+      queryClient.invalidateQueries({ queryKey: ['wastelandDates'] });
     }
   });
-
-  if (lastDate) {
+  console.log(dates)
+  // Проверка условия и обновление
+  if (dates) {
     const now = DateTime.now();
-    const lastDateLuxon = DateTime.fromJSDate(lastDate);
-    const hoursDiff = now.diff(lastDateLuxon, 'hours').hours;
+    const nextDate = DateTime.fromJSDate(dates.nextDate);
+    const hoursSinceNext = now.diff(nextDate, 'hours').hours;
 
-    if (hoursDiff >= 24) {
-      const newDate = lastDateLuxon.plus({ days: 14 }).toJSDate();
-      mutate(newDate);
+    if (hoursSinceNext >= 24) {
+      const newLastDate = dates.nextDate; // Берем предыдущий nextDate
+      const newNextDate = DateTime.fromJSDate(dates.nextDate)
+        .plus({ days: 14 }) // Добавляем 14 дней к предыдущему nextDate
+        .toJSDate();
+
+      mutate({
+        lastDate: newLastDate,
+        nextDate: newNextDate
+      });
     }
   }
 
@@ -61,7 +81,7 @@ const HeaderBanner = () => {
     return (
       <CountdownTimer className={'text-success fw-bold'}
                       expireClassName={'text-danger fw-bold'}
-                      targetDate={DateTime.fromJSDate(lastDate!)}/>
+                      targetDate={DateTime.fromJSDate(dates?.nextDate ?? new Date)}/>
     )
   }
 

@@ -411,7 +411,10 @@ const RegistrationForm = () => {
                 <FormGroup className='mb-4'>
                   <Row>
                     <FormLabel>Availability</FormLabel>
-                    <FormText>Stronger players encoraged to take 1st shift</FormText>
+                    <FormText className={'mb-1'}>Stronger players encoraged to take 1st shift</FormText>
+                    <FormText className={'text-danger mt-0 mb-2'}>If you select both shifts, you will be randomly
+                      assigned to either shift, BUT if there is a shortage of players, you may be assigned to a full
+                      shift.</FormText>
                     {/* Общая ошибка для смен */}
                     {/* @ts-ignore */}
                     {errors.shifts && (
