@@ -8,6 +8,8 @@ import AdminMain from "./pages/admin/Main";
 import {GoogleTranslate} from "./Components/GoogleTranslate";
 import ThanksPage from "./pages/ThanksPage";
 import SchedulePage from "./pages/Schedule";
+import AdminLayout from "./Layouts/AdminLayout/AdminLayout.tsx";
+import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +23,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Container className={'position-relative'}>
+      <Container className={'position-relative min-vh-100 h-100'}>
         <HeaderBanner/>
         <BrowserRouter>
           <Routes>
@@ -29,7 +31,10 @@ function App() {
             <Route index path={'/thanks'} element={<ThanksPage/>}/>
             <Route index path={'/schedule'} element={<SchedulePage/>}/>
             <Route path={'admin'}>
-              <Route index element={<AdminMain/>}/>
+              <Route element={<AdminLayout/>}>
+                <Route index element={<AdminMain/>}/>
+                <Route path={'settings'} element={<Settings/>}/>
+              </Route>
             </Route>
           </Routes>
         </BrowserRouter>
@@ -38,10 +43,7 @@ function App() {
             <GoogleTranslate/>
           </div>
           <ReactQueryDevtools initialIsOpen={false}/>
-
         </Row>
-
-
       </Container>
     </QueryClientProvider>
   )

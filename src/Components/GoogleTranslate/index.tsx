@@ -14,6 +14,7 @@ export const GoogleTranslate = () => {
   };
 
   useEffect(() => {
+    console.log(import.meta.env.PROD)
     const getCookie = (name: string) => {
       const cookies = document.cookie.split(';');
       for (const cookie of cookies) {
@@ -26,7 +27,7 @@ export const GoogleTranslate = () => {
     };
 
     const existingLang = getCookie('googtrans');
-    if (!existingLang) {
+    if (!existingLang && import.meta.env.PROD) {
       const browserLang = navigator.language || (navigator as any).userLanguage || 'en';
       const detectedLocale = browserLang.toLowerCase();
 

@@ -33,6 +33,7 @@ import secondShift from "../../assets/images/2-shift.png";
 import capitan from "../../assets/images/capitan.png";
 import rallySize from "../../assets/images/rally-size.jpg";
 import {useNavigate} from "react-router";
+
 type FormErrors = {
   troopTypes?: { message: string };
   shifts?: { message: string };
@@ -51,13 +52,16 @@ const RegistrationForm = () => {
     setError,
     clearErrors,
     formState: {errors}
-  } = useForm<FormErrors>({mode: 'onChange', defaultValues:{
+  } = useForm<FormErrors>({
+    mode: 'onChange', defaultValues: {
       troopTier: 10,
       isCapitan: false,
       troopFighter: false,
       troopRider: false,
       troopShooter: false,
-    }});
+      rallySize: 0,
+    }
+  });
 // Состояния для Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -111,11 +115,6 @@ const RegistrationForm = () => {
       setValue('isCapitan', existingData.isCapitan);
     }
   }, [existingData, setValue]);
-  // // Валидация типов войск
-  // const validateTroopTypes = () => {
-  //   const {troopFighter, troopShooter, troopRider} = getValues();
-  //   return troopFighter || troopShooter || troopRider;
-  // };
 
   // Валидация смен
   const validateShifts = () => {
@@ -163,7 +162,7 @@ const RegistrationForm = () => {
           return existingData.id;
         } else {
           const newId = await getNextPlayerId();
-          await addDoc(collection(db, 'players'), { ...playerData, id: newId });
+          await addDoc(collection(db, 'players'), {...playerData, id: newId});
           return newId;
         }
       } catch (error: any) {
@@ -171,7 +170,7 @@ const RegistrationForm = () => {
       }
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({queryKey: ['players']});
       setToastMessage(variables.id ? '🎉 Player updated successfully!' : '✨ New player created!');
       setToastVariant('success');
       setShowToast(true);
@@ -197,7 +196,7 @@ const RegistrationForm = () => {
       await runTransaction(db, async (transaction) => {
         const counterDoc = await transaction.get(counterRef);
         newCount = (counterDoc.data()?.count || 0) + 1;
-        transaction.set(counterRef, { count: newCount });
+        transaction.set(counterRef, {count: newCount});
       });
 
       return `PLAYER-${newCount.toString().padStart(6, '0')}`;
@@ -226,7 +225,7 @@ const RegistrationForm = () => {
 
   return (
     <>
-      <ToastContainer position="top-end" className="p-3 position-fixed" style={{ zIndex: 9999 }}>
+      <ToastContainer position="top-end" className="p-3 position-fixed" style={{zIndex: 9999}}>
         <Toast
           bg={toastVariant}
           show={showToast}
@@ -326,7 +325,7 @@ const RegistrationForm = () => {
                           <Controller
                             name={fieldName}
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                               <>
                                 {/* @ts-ignore*/}
                                 <FormCheck
@@ -363,8 +362,8 @@ const RegistrationForm = () => {
                       <Controller
                         name="troopTier"
                         control={control}
-                        rules={{ required: 'Troop tier is required' }}
-                        render={({ field }) => (
+                        rules={{required: 'Troop tier is required'}}
+                        render={({field}) => (
                           <div className="d-flex gap-3">
                             {[10, 11, 12, 13].map((tier) => (
                               <FormCheck
@@ -451,12 +450,13 @@ const RegistrationForm = () => {
                 <FormGroup className='mb-4'>
                   <Row className='flex-column'>
                     <FormLabel>Are you available to captain a turret?</FormLabel>
-                    <FormText>Captains are required to spend 2000 Diamonds for super reinforcement at minimum.</FormText>
+                    <FormText>Captains are required to spend 2000 Diamonds for super reinforcement at
+                      minimum.</FormText>
                     <Col className='d-flex mb-2' md={4}>
                       <Controller
                         name="isCapitan"
                         control={control}
-                        render={({ field }) => (
+                        render={({field}) => (
                           <div className="d-flex gap-3">
                             {[true, false].map((value) => (
                               <FormCheck
@@ -480,11 +480,11 @@ const RegistrationForm = () => {
 
 
                 {/* Размер отряда для капитана */}
-                <Row className='mb-4'>
-                  <Col className='d-flex flex-column' md={4}>
-                    <FormLabel>Rally Size - Correct Size</FormLabel>
-                    <Image src={rallySize} className='w-100 mb-2' loading='lazy'/>
-                    <FormControl
+                {isCaptain && <Row className='mb-4'>
+									<Col className='d-flex flex-column' md={4}>
+										<FormLabel>Rally Size - Correct Size</FormLabel>
+										<Image src={rallySize} className='w-100 mb-2' loading='lazy'/>
+										<FormControl
                       {...register('rallySize', {
                         validate: (value) => {
                           if (isCaptain && !value) return 'Rally size is required for captains';
@@ -492,15 +492,15 @@ const RegistrationForm = () => {
                         },
                         valueAsNumber: true
                       })}
-                      placeholder='1130000'
-                      type='number'
-                      isInvalid={!!errors.rallySize}
-                    />
+											placeholder='1130000'
+											type='number'
+											isInvalid={!!errors.rallySize}
+										/>
                     {errors.rallySize && (
                       <Form.Text className='text-danger'>{errors.rallySize.message}</Form.Text>
                     )}
-                  </Col>
-                </Row>
+									</Col>
+								</Row>}
 
 
               </Card.Body>
@@ -511,11 +511,9 @@ const RegistrationForm = () => {
                     <Button
                       className='ms-auto'
                       type='submit'
-                      // @ts-ignore
-                      disabled={mutation.isLoading || Object.keys(errors).length > 0}
+                      disabled={mutation.isPending || Object.keys(errors).length > 0}
                     >
-                      { /* @ts-ignore */}
-                      {mutation.isLoading ? 'Saving...' : 'Submit'}
+                      {mutation.isPending ? 'Saving...' : 'Submit'}
                     </Button>
                   </Col>
                 </Row>

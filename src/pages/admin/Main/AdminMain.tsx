@@ -141,84 +141,83 @@ function AdminMain() {
   if (isError) return <div>Error loading data</div>;
 
   return (
-    <Card>
-
-      <Card.Header className={'d-flex justify-content-between'}><h2>List of players</h2><Button onClick={handleExport}>download xlsx</Button></Card.Header>
-      <Card.Body>
-        <Table responsive className="w-full border-collapse">
-          <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className="border-b p-2 text-left font-semibold"
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-          </thead>
-          <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id} className="hover:bg-gray-50">
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="border-b p-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-          </tbody>
-        </Table>
-
-      </Card.Body>
-      <Card.Footer>
-        <Pagination>
-          <Pagination.Item
-            onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<<'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {'>'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.lastPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {'>>'}
-          </Pagination.Item>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={e => {
-              table.setPageSize(Number(e.target.value))
-            }}
-          >
-            {[10, 20, 30, 40, 50].map(pageSize => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>
+      <Card>
+        <Card.Header className={'d-flex justify-content-between'}><h2>List of players</h2><Button onClick={handleExport}>download xlsx</Button></Card.Header>
+        <Card.Body>
+          <Table responsive className="w-full border-collapse">
+            <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th
+                    key={header.id}
+                    className="border-b p-2 text-left font-semibold"
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
             ))}
-          </select>
-        </Pagination>
+            </thead>
+            <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id} className="border-b p-2">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            </tbody>
+          </Table>
 
-      </Card.Footer>
-    </Card>
+        </Card.Body>
+        <Card.Footer>
+          <Pagination>
+            <Pagination.Item
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {'<<'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {'<'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              {'>'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              {'>>'}
+            </Pagination.Item>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={e => {
+                table.setPageSize(Number(e.target.value))
+              }}
+            >
+              {[10, 20, 30, 40, 50].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
+          </Pagination>
+
+        </Card.Footer>
+      </Card>
   );
 }
 
