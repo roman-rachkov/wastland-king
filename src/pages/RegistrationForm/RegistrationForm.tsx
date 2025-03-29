@@ -1,13 +1,15 @@
+import {useNavigate} from "react-router";
 import {Controller, useForm} from "react-hook-form";
 import {Player} from "../../types/Player.ts";
 import {useEffect, useState} from 'react';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {addDoc, collection, doc, getDocs, query, runTransaction, updateDoc, where} from 'firebase/firestore';
-import {db} from "../../services/firebase.ts";
 
+import {db} from "../../services/firebase.ts";
 import {DateTime} from 'luxon';
 import _ from 'lodash';
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -32,7 +34,7 @@ import firstShift from "../../assets/images/1-shift.png";
 import secondShift from "../../assets/images/2-shift.png";
 import capitan from "../../assets/images/capitan.png";
 import rallySize from "../../assets/images/rally-size.jpg";
-import {useNavigate} from "react-router";
+import {fetchWastelandDates} from "../../api/fetchWastelandDates.ts";
 
 type FormErrors = {
   troopTypes?: { message: string };
@@ -73,6 +75,10 @@ const RegistrationForm = () => {
   const isCaptain = watch('isCapitan');
   const nameValue = watch('name');
 
+  const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
+    queryKey: ['wastelandDates'],
+    queryFn: fetchWastelandDates
+  });
   // Поиск игроков с debounce
   const searchPlayers = _.debounce(async (searchText: string) => {
     if (searchText.length < 3) {
@@ -222,6 +228,12 @@ const RegistrationForm = () => {
     }
     mutation.mutate(data);
   };
+  if (datesIsloading || !dates) return <div>Loading...</div>;
+  if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
+
+  if(DateTime.now() >= DateTime.fromJSDate(dates.nextDate).minus({hours: 24}) || DateTime.now() <= DateTime.fromJSDate(dates.lastDate).plus({hours: 48})) {
+    return <Alert variant={'danger'}>The event is very close or already underway. Registration is closed. Thank you!</Alert>
+  }
 
   return (
     <>

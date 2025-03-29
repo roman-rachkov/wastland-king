@@ -14,7 +14,6 @@ export const GoogleTranslate = () => {
   };
 
   useEffect(() => {
-    console.log(import.meta.env.PROD)
     const getCookie = (name: string) => {
       const cookies = document.cookie.split(';');
       for (const cookie of cookies) {

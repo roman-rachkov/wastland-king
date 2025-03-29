@@ -76,8 +76,8 @@ const columns: ColumnDef<Player>[] = [
 
 const fetchPlayers = async (dates: EventDates): Promise<Player[]> => {
   const q = query(collection(db, 'players'),
-    where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({day: 2}).toJSDate()),
-    where('updatedAt', '<=', DateTime.fromJSDate(dates.nextDate).minus({day: 1}).toJSDate()),
+    where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({hours: 48}).toJSDate()),
+    where('updatedAt', '<=', DateTime.fromJSDate(dates.nextDate).minus({hours: 24}).toJSDate()),
   );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
