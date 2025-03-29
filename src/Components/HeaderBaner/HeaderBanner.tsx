@@ -3,28 +3,12 @@ import headerBg from "../../assets/images/header.jpg";
 import CountdownTimer from "./Countdowntimer.tsx";
 import {DateTime} from "luxon";
 import {db} from "../../services/firebase.ts";
-import {doc, getDoc, updateDoc} from "firebase/firestore";
+import {doc, updateDoc} from "firebase/firestore";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {EventDates, fetchWastelandDates} from "../../api/fetchWastelandDates.ts";
 
-interface EventDates {
-  lastDate: Date;
-  nextDate: Date;
-}
+
 // Функция получения дат
-const fetchWastelandDates = async (): Promise<EventDates> => {
-  const docRef = doc(db, 'counters','wasteland_event');
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) {
-    throw new Error('Document not found');
-  }
-
-  const data = docSnap.data();
-  return {
-    lastDate: data.lastDate.toDate(),
-    nextDate: data.nextDate.toDate()
-  };
-};
 
 // Функция обновления даты
 const updateWastelandDates = async (newDates: EventDates) => {
@@ -51,7 +35,7 @@ const HeaderBanner = () => {
       queryClient.invalidateQueries({ queryKey: ['wastelandDates'] });
     }
   });
-  console.log(dates)
+
   // Проверка условия и обновление
   if (dates) {
     const now = DateTime.now();

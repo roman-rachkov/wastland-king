@@ -2,7 +2,7 @@
 // npm install @tanstack/react-table @tanstack/react-query firebase luxon
 import * as XLSX from 'xlsx';
 // 2. Инициализация Firebase
-import {collection, getDocs} from 'firebase/firestore';
+import {collection, getDocs, query, where} from 'firebase/firestore';
 import {DateTime} from 'luxon';
 
 // 3. Создаем компонент таблицы
@@ -18,6 +18,7 @@ import {
 import {db} from "../../../services/firebase.ts";
 import {Button, Card, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
+import {EventDates, fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
 
 
 const columns: ColumnDef<Player>[] = [
@@ -33,7 +34,7 @@ const columns: ColumnDef<Player>[] = [
   },
   {
     header: 'Updated At',
-      accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
+    accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
   },
   {
     header: 'Name',
@@ -73,8 +74,12 @@ const columns: ColumnDef<Player>[] = [
 
 ];
 
-const fetchPlayers = async (): Promise<Player[]> => {
-  const querySnapshot = await getDocs(collection(db, 'players'));
+const fetchPlayers = async (dates: EventDates): Promise<Player[]> => {
+  const q = query(collection(db, 'players'),
+    where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({day: 2}).toJSDate()),
+    where('updatedAt', '<=', DateTime.fromJSDate(dates.nextDate).minus({day: 1}).toJSDate()),
+  );
+  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
@@ -84,13 +89,20 @@ const fetchPlayers = async (): Promise<Player[]> => {
 };
 
 function AdminMain() {
-  const {data, isLoading, isError} = useQuery({
+
+  const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
+    queryKey: ['wastelandDates'],
+    queryFn: fetchWastelandDates
+  });
+
+  const {data: playersData, isLoading: playesrsIsLoading, isError: playersIsError, error: playersError} = useQuery({
     queryKey: ['players'],
-    queryFn: fetchPlayers,
+    queryFn: () => fetchPlayers(dates!),
+    enabled: !!dates
   });
 
   const table = useReactTable({
-    data: data || [],
+    data: playersData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -137,87 +149,88 @@ function AdminMain() {
     });
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading data</div>;
-
+  if (datesIsloading || playesrsIsLoading) return <div>Loading...</div>;
+  if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
+  if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
   return (
-      <Card>
-        <Card.Header className={'d-flex justify-content-between'}><h2>List of players</h2><Button onClick={handleExport}>download xlsx</Button></Card.Header>
-        <Card.Body>
-          <Table responsive className="w-full border-collapse">
-            <thead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="border-b p-2 text-left font-semibold"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-            </thead>
-            <tbody>
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="border-b p-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            </tbody>
-          </Table>
-
-        </Card.Body>
-        <Card.Footer>
-          <Pagination>
-            <Pagination.Item
-              onClick={() => table.firstPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              {'<<'}
-            </Pagination.Item>
-            <Pagination.Item
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              {'<'}
-            </Pagination.Item>
-            <Pagination.Item
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              {'>'}
-            </Pagination.Item>
-            <Pagination.Item
-              onClick={() => table.lastPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              {'>>'}
-            </Pagination.Item>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={e => {
-                table.setPageSize(Number(e.target.value))
-              }}
-            >
-              {[10, 20, 30, 40, 50].map(pageSize => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
+    <Card>
+      <Card.Header className={'d-flex justify-content-between'}><h2>List of players</h2><Button onClick={handleExport}>download
+        xlsx</Button></Card.Header>
+      <Card.Body>
+        <Table responsive className="w-full border-collapse">
+          <thead>
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th
+                  key={header.id}
+                  className="border-b p-2 text-left font-semibold"
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </th>
               ))}
-            </select>
-          </Pagination>
+            </tr>
+          ))}
+          </thead>
+          <tbody>
+          {table.getRowModel().rows.map(row => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id} className="border-b p-2">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+          </tbody>
+        </Table>
 
-        </Card.Footer>
-      </Card>
+      </Card.Body>
+      <Card.Footer>
+        <Pagination>
+          <Pagination.Item
+            onClick={() => table.firstPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<<'}
+          </Pagination.Item>
+          <Pagination.Item
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<'}
+          </Pagination.Item>
+          <Pagination.Item
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>'}
+          </Pagination.Item>
+          <Pagination.Item
+            onClick={() => table.lastPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>>'}
+          </Pagination.Item>
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={e => {
+              table.setPageSize(Number(e.target.value))
+            }}
+          >
+            {[10, 20, 30, 40, 50].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                {pageSize}
+              </option>
+            ))}
+          </select>
+        </Pagination>
+
+      </Card.Footer>
+    </Card>
   );
 }
 
