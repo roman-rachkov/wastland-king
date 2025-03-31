@@ -8,33 +8,43 @@ import {DateTime} from 'luxon';
 // 3. Создаем компонент таблицы
 import {useQuery} from '@tanstack/react-query';
 import {
+  Column,
   ColumnDef,
   flexRender,
-  getCoreRowModel,
+  getCoreRowModel, getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
+  getSortedRowModel, Row,
   useReactTable,
 } from '@tanstack/react-table';
 import {db} from "../../../services/firebase.ts";
 import {Button, Card, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {EventDates, fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
+import {useEffect, useState} from "react";
 
+
+function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
+  return filterValue === "" || filterValue === 'true' && row.getValue(columnId) || filterValue === 'false' && !row.getValue(columnId);
+
+}
 
 const columns: ColumnDef<Player>[] = [
   {
     header: 'ID',
     accessorKey: 'id',
     id: 'id',
-    sortDescFirst: false,
+    sortingFn: "text"
+    // sortDescFirst: false,
   },
   {
     header: 'Created At',
     accessorFn: row => DateTime.fromJSDate(row.createdAt).toFormat('dd.MM.yyyy HH:mm'),
+    sortingFn: "datetime",
   },
   {
     header: 'Updated At',
     accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
+    sortingFn: "datetime",
   },
   {
     header: 'Name',
@@ -45,24 +55,51 @@ const columns: ColumnDef<Player>[] = [
   }, {
     header: 'First shift',
     accessorKey: 'firstShift',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'Second Shift',
     accessorKey: 'secondShift',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'Troop tier',
     accessorKey: 'troopTier',
+    meta: {
+      filterVariant: 'select',
+    },
   }, {
     header: 'Is Fighter',
     accessorKey: 'troopFighter',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'Is Shooter',
     accessorKey: 'troopShooter',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'Is Rider',
     accessorKey: 'troopRider',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'Is Capitan',
     accessorKey: 'isCapitan',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
   }, {
     header: 'March size',
     accessorKey: 'marchSize',
@@ -73,7 +110,99 @@ const columns: ColumnDef<Player>[] = [
   },
 
 ];
+function Filter({ column }: { column: Column<any, unknown> }) {
+  const columnFilterValue = column.getFilterValue()
+  // @ts-ignore
+  const { filterVariant } = column.columnDef.meta ?? {}
 
+  return filterVariant === 'range' ? (
+    <div>
+      <div className="flex space-x-2">
+        {/* See faceted column filters example for min max values functionality */}
+        <DebouncedInput
+          type="number"
+          value={(columnFilterValue as [number, number])?.[0] ?? ''}
+          onChange={value =>
+            column.setFilterValue((old: [number, number]) => [value, old?.[1]])
+          }
+          placeholder={`Min`}
+          className="w-24 border shadow rounded"
+        />
+        <DebouncedInput
+          type="number"
+          value={(columnFilterValue as [number, number])?.[1] ?? ''}
+          onChange={value =>
+            column.setFilterValue((old: [number, number]) => [old?.[0], value])
+          }
+          placeholder={`Max`}
+          className="w-24 border shadow rounded"
+        />
+      </div>
+      <div className="h-1" />
+    </div>
+  ) : filterVariant === 'select' ? (
+    <select
+      onChange={e => column.setFilterValue(e.target.value)}
+      value={parseInt(columnFilterValue as string)}
+    >
+      {/* See faceted column filters example for dynamic select options */}
+      <option value="">All</option>
+      <option value="10">T10</option>
+      <option value="11">T11</option>
+      <option value="12">T12</option>
+      <option value="13">T13</option>
+    </select>
+  ) : filterVariant === 'booleanSelect' ? (
+    <select
+      onChange={e => column.setFilterValue(e.target.value)}
+      value={columnFilterValue?.toString()}
+    >
+      {/* See faceted column filters example for dynamic select options */}
+      <option value="">All</option>
+      <option value="true">True</option>
+      <option value="false">False</option>
+    </select>
+    ) : (
+    <DebouncedInput
+      className="w-36 border shadow rounded"
+      onChange={value => column.setFilterValue(value)}
+      placeholder={`Search...`}
+      type="text"
+      value={(columnFilterValue ?? '') as string}
+    />
+    // See faceted column filters example for datalist search suggestions
+  )
+}
+
+// A typical debounced input react component
+function DebouncedInput({
+                          value: initialValue,
+                          onChange,
+                          debounce = 500,
+                          ...props
+                        }: {
+  value: string | number
+  onChange: (value: string | number) => void
+  debounce?: number
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
+  const [value, setValue] = useState(initialValue)
+
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value)
+    }, debounce)
+
+    return () => clearTimeout(timeout)
+  }, [value])
+
+  return (
+    <input {...props} value={value} onChange={e => setValue(e.target.value)} />
+  )
+}
 const fetchPlayers = async (dates: EventDates): Promise<Player[]> => {
   const q = query(collection(db, 'players'),
     where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({hours: 36}).toJSDate()),
@@ -107,6 +236,7 @@ function AdminMain() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     initialState: {
       sorting: [
         {
@@ -161,17 +291,38 @@ function AdminMain() {
           <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className="border-b p-2 text-left font-semibold"
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
+              {headerGroup.headers.map(header => {
+                return (
+                  <th key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder ? null : (
+                      <>
+                        <div
+                          {...{
+                            className: header.column.getCanSort()
+                              ? 'cursor-pointer select-none'
+                              : '',
+                            onClick: header.column.getToggleSortingHandler(),
+                          }}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: ' 🔼',
+                            desc: ' 🔽',
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                        {header.column.getCanFilter() ? (
+                          <div>
+                            <Filter column={header.column} />
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           ))}
           </thead>
@@ -189,7 +340,7 @@ function AdminMain() {
         </Table>
 
       </Card.Body>
-      <Card.Footer>
+      <Card.Footer className={'d-flex justify-content-between'}>
         <Pagination>
           <Pagination.Item
             onClick={() => table.firstPage()}
@@ -228,7 +379,8 @@ function AdminMain() {
             ))}
           </select>
         </Pagination>
-
+        <div className={'ms-3 me-auto fs-3'}>Total: {table.getRowCount()}</div>
+        <Button variant={'secondary'} onClick={() => table.resetColumnFilters(true)}>Clear filters</Button>
       </Card.Footer>
     </Card>
   );

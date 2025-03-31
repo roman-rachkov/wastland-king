@@ -6,6 +6,7 @@ const Settings = () => {
     <Row className={'flex-column'}>
       <Col>
         <PlayerCleanup/>
+
       </Col>
     </Row>
   );

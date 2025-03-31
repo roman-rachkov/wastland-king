@@ -3,7 +3,7 @@ import { db } from "../../../../services/firebase.ts";
 import { Player } from "../../../../types/Player.ts";
 import { useMutation } from "@tanstack/react-query";
 import { DateTime } from 'luxon';
-import {Alert, Button} from "react-bootstrap";
+import {Alert, Button, FormText} from "react-bootstrap";
 
 type ExtendedPlayer = Player & {
   firestoreId: string;
@@ -81,12 +81,13 @@ const PlayerCleanup = () => {
     <div>
       <Button
         variant={'secondary'}
-        onClick={() => mutation.mutate()}
-        disabled={mutation.isPending}
+        onClick={import.meta.env.DEV ? () => mutation.mutate() : undefined}
+        disabled={import.meta.env.PROD ?? mutation.isPending}
       >
         {mutation.isPending ? 'Processing...' : 'Cleanup Players'}
       </Button>
-
+      <FormText className={'ms-2'}>Clean up duplicate registration</FormText>
+      <FormText className={'text-danger ms-2 fw-bold'}>DANGER! please save XLSX first</FormText>
       {mutation.isError && (
         <Alert variant={'danger'}>Error: {(mutation.error as Error).message}</Alert>
       )}
