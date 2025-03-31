@@ -69,6 +69,7 @@ const columns: ColumnDef<Player>[] = [
   }, {
     header: 'Troop tier',
     accessorKey: 'troopTier',
+    filterFn: (row, columnId, filterValue) => row.getValue(columnId) === parseInt(filterValue),
     meta: {
       filterVariant: 'select',
     },
@@ -103,10 +104,16 @@ const columns: ColumnDef<Player>[] = [
   }, {
     header: 'March size',
     accessorKey: 'marchSize',
+    meta: {
+      filterVariant: 'range',
+    },
   },
   {
     header: 'Rally size',
     accessorKey: 'rallySize',
+    meta: {
+      filterVariant: 'range',
+    },
   },
 
 ];
