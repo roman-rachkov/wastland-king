@@ -10,6 +10,7 @@ import ThanksPage from "./pages/ThanksPage";
 import SchedulePage from "./pages/Schedule";
 import AdminLayout from "./Layouts/AdminLayout/AdminLayout.tsx";
 import Settings from "./pages/admin/Settings";
+import OrganizePlayers from "./pages/admin/OrganizePlayers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ function App() {
               <Route element={<AdminLayout/>}>
                 <Route index element={<AdminMain/>}/>
                 <Route path={'settings'} element={<Settings/>}/>
+                <Route path={'organize-players'} element={<OrganizePlayers/>}/>
               </Route>
             </Route>
           </Routes>

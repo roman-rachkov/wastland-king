@@ -21,6 +21,7 @@ import {Button, Card, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {EventDates, fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
 import {useEffect, useState} from "react";
+import {fetchPlayers} from "../../../api/fetchPlayers.ts";
 
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
@@ -210,19 +211,7 @@ function DebouncedInput({
     <input {...props} value={value} onChange={e => setValue(e.target.value)} />
   )
 }
-const fetchPlayers = async (dates: EventDates): Promise<Player[]> => {
-  const q = query(collection(db, 'players'),
-    where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({hours: 36}).toJSDate()),
-    where('updatedAt', '<=', DateTime.fromJSDate(dates.nextDate).minus({hours: 12}).toJSDate()),
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt.toDate(),
-    updatedAt: doc.data().updatedAt.toDate(),
-  })) as Player[];
-};
+
 
 function AdminMain() {
 
