@@ -2,7 +2,6 @@
 // npm install @tanstack/react-table @tanstack/react-query firebase luxon
 import * as XLSX from 'xlsx';
 // 2. Инициализация Firebase
-import {collection, getDocs, query, where} from 'firebase/firestore';
 import {DateTime} from 'luxon';
 
 // 3. Создаем компонент таблицы
@@ -11,15 +10,16 @@ import {
   Column,
   ColumnDef,
   flexRender,
-  getCoreRowModel, getFilteredRowModel,
+  getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel, Row,
+  getSortedRowModel,
+  Row,
   useReactTable,
 } from '@tanstack/react-table';
-import {db} from "../../../services/firebase.ts";
 import {Button, Card, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
-import {EventDates, fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
+import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
 import {useEffect, useState} from "react";
 import {fetchPlayers} from "../../../api/fetchPlayers.ts";
 
@@ -219,7 +219,7 @@ function AdminMain() {
     queryKey: ['wastelandDates'],
     queryFn: fetchWastelandDates
   });
-
+  console.log(dates)
   const {data: playersData, isLoading: playesrsIsLoading, isError: playersIsError, error: playersError} = useQuery({
     queryKey: ['players'],
     queryFn: () => fetchPlayers(dates!),

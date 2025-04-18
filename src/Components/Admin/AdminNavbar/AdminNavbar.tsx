@@ -11,6 +11,7 @@ const AdminNavbar = () => {
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/admin">Sheet</Nav.Link>
             <Nav.Link as={Link} to="/admin/settings">Settings</Nav.Link>
+            <Nav.Link as={Link} to="/admin/organize-players">Calculate Players</Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Container>

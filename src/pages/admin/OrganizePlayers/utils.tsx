@@ -1,147 +1,143 @@
-import { Player } from "../../../types/Player.ts";
+import {Player} from "../../../types/Player.ts";
+import {IBuildings, Shift, TBuildingName} from "../../../types/Buildings.tsx";
 
-export type Group = {
-  captain: Player;
-  firstShift: Player[];
-  secondShift: Player[];
-  usedCapacity: number;
-};
+export function allocatePlayersToBuildings(players: Player[]): IBuildings[] {
+  const buildings: IBuildings[] = [];
+  const buildingNames: TBuildingName[] = ['HUB', 'North', 'South', 'West', 'East'];
 
-export type Building = {
-  id: number;
-  group: Group;
-};
+  // Фильтруем обычных игроков (не капитанов) с выбранными сменами
+  const eligiblePlayers = players.filter(p => !p.isCapitan && (p.firstShift || p.secondShift));
 
-export type TroopGroups = {
-  fighter: Player[];
-  shooter: Player[];
-  rider: Player[];
-};
+  // Получаем всех капитанов
+  const allCaptains = players.filter(p => p.isCapitan);
 
-export type Reserve = {
-  firstShift: TroopGroups;
-  secondShift: TroopGroups;
-};
+  // Разделяем капитанов по доступности смен
+  const firstShiftOnlyCaptains = allCaptains.filter(c => c.firstShift && !c.secondShift);
+  const secondShiftOnlyCaptains = allCaptains.filter(c => !c.firstShift && c.secondShift);
+  const bothShiftsCaptains = allCaptains.filter(c => c.firstShift && c.secondShift);
 
-export function organizePlayers(players: Player[]): { buildings: Building[], reserve: Reserve } {
-  const allCaptains = selectAndSortCaptains(players);
-  const selectedCaptains = allCaptains.slice(0, 5);
-  const reserveCaptains = allCaptains.slice(5);
-  const regularPlayers = players.filter(p => !p.isCapitan);
-  const usedPlayers = new Set<string>();
+  // Помечаем использованных капитанов
+  const usedCaptains = new Set<string>();
 
-  const buildings = selectedCaptains.map((captain, index) => {
-    const group = buildGroup(captain, regularPlayers, usedPlayers);
-    return { id: index + 1, group };
+  // Сначала создаем все возможные комбинации зданий и смен
+  const buildingSlots: {buildingName: TBuildingName, shift: Shift}[] = [];
+  for (const buildingName of buildingNames) {
+    buildingSlots.push({buildingName, shift: Shift.first});
+    buildingSlots.push({buildingName, shift: Shift.second});
+  }
+
+  // Распределяем капитанов по зданиям
+  for (const slot of buildingSlots) {
+    if (buildings.length >= 10) break;
+
+    const shiftKey = slot.shift === Shift.first ? 'firstShift' : 'secondShift';
+    let captain: Player | undefined;
+
+    // 1. Пробуем найти капитана только для этой смены
+    if (slot.shift === Shift.first) {
+      captain = firstShiftOnlyCaptains.find(c => !usedCaptains.has(c.id));
+    } else {
+      captain = secondShiftOnlyCaptains.find(c => !usedCaptains.has(c.id));
+    }
+
+    // 2. Если не нашли, пробуем капитана на две смены
+    if (!captain) {
+      captain = bothShiftsCaptains.find(c =>
+        c[shiftKey] && !usedCaptains.has(c.id)
+      );
+    }
+
+    // 3. Если капитана нет - оставляем здание пустым
+    if (!captain) {
+      buildings.push({
+        buildingName: slot.buildingName,
+        capitan: {} as Player, // Пустой объект для ручного заполнения
+        shift: slot.shift,
+        rallySize: 0,
+        players: []
+      });
+      continue;
+    }
+
+    usedCaptains.add(captain.id);
+
+    // Создаем здание с распределением игроков
+    const building = createBuilding(
+      slot.buildingName,
+      captain,
+      slot.shift,
+      eligiblePlayers,
+      buildings
+    );
+
+    buildings.push(building);
+  }
+
+  return buildings.slice(0, 10);
+}
+
+// Вспомогательная функция для создания здания
+function createBuilding(
+  buildingName: TBuildingName,
+  captain: Player,
+  shift: Shift,
+  eligiblePlayers: Player[],
+  existingBuildings: IBuildings[]
+): IBuildings {
+  const shiftKey = shift === Shift.first ? 'firstShift' : 'secondShift';
+
+  const building: IBuildings = {
+    buildingName,
+    capitan: captain,
+    shift,
+    rallySize: captain.rallySize,
+    players: []
+  };
+
+  // Определяем нужные типы войск
+  const neededTroopTypes: (keyof Player)[] = [];
+  if (captain.troopFighter) neededTroopTypes.push('troopFighter');
+  if (captain.troopShooter) neededTroopTypes.push('troopShooter');
+  if (captain.troopRider) neededTroopTypes.push('troopRider');
+
+  if (neededTroopTypes.length === 0 || captain.rallySize <= 0) {
+    return building;
+  }
+
+  // Фильтруем подходящих игроков
+  const shiftPlayers = eligiblePlayers.filter(p =>
+    (p[shiftKey] || (p.firstShift && p.secondShift)) &&
+    neededTroopTypes.some(type => p[type]) &&
+    !isPlayerAssigned(p.id, existingBuildings)
+  ).sort((a, b) => {
+    // Сортируем по убыванию: тир -> marchSize
+    if (b.troopTier !== a.troopTier) return b.troopTier - a.troopTier;
+    return b.marchSize - a.marchSize;
   });
 
-  const allReservePlayers = [
-    ...reserveCaptains,
-    ...regularPlayers.filter(p => !usedPlayers.has(p.id))
-  ];
+  let remainingRallySize = captain.rallySize;
 
-  const reserve = organizeReserve(allReservePlayers);
+  // Распределяем игроков
+  for (const player of shiftPlayers) {
+    if (remainingRallySize <= 0) break;
 
-  return { buildings, reserve };
-}
-
-function selectAndSortCaptains(players: Player[]): Player[] {
-  return players
-    .filter(p => p.isCapitan)
-    .sort((a, b) => {
-      const capacityDiff = b.rallySize - a.rallySize;
-      return capacityDiff !== 0 ? capacityDiff : b.troopTier - a.troopTier;
+    const assignedSize = Math.min(player.marchSize, remainingRallySize);
+    building.players.push({
+      player: player,
+      march: assignedSize
     });
-}
-
-function buildGroup(captain: Player, players: Player[], usedPlayers: Set<string>): Group {
-  const allowedTypes = getTroopTypes(captain);
-  const captainFirst = captain.firstShift ? captain.marchSize : 0;
-  const captainSecond = captain.secondShift ? captain.marchSize : 0;
-  const availableCapacity = (captain.rallySize - captainFirst) + (captain.rallySize - captainSecond);
-
-  let remaining = availableCapacity;
-  const groupPlayers: Player[] = captain.firstShift || captain.secondShift ? [captain] : [];
-
-  const candidates = players
-    .filter(p => !usedPlayers.has(p.id) && isPlayerCompatible(p, allowedTypes))
-    .sort((a, b) => b.troopTier - a.troopTier);
-
-  for (const player of candidates) {
-    if (player.marchSize <= remaining) {
-      groupPlayers.push(player);
-      usedPlayers.add(player.id);
-      remaining -= player.marchSize;
-    } else break;
+    remainingRallySize -= assignedSize;
   }
 
-  return assignShifts(captain, groupPlayers);
+  return building;
 }
 
-function assignShifts(captain: Player, players: Player[]): Group {
-  const firstShift: Player[] = [];
-  const secondShift: Player[] = [];
-  let usedFirst = 0, usedSecond = 0;
-
-  const capFirst = captain.firstShift ? captain.marchSize : 0;
-  const capSecond = captain.secondShift ? captain.marchSize : 0;
-  const capInFirst = captain.firstShift;
-  const capInSecond = captain.secondShift;
-
-  if (capInFirst) firstShift.push(captain);
-  if (capInSecond) secondShift.push(captain);
-
-  const firstCapacity = captain.rallySize - capFirst;
-  const secondCapacity = captain.rallySize - capSecond;
-
-  for (const player of players.filter(p => p !== captain)) {
-    if (usedFirst + player.marchSize <= firstCapacity) {
-      firstShift.push(player);
-      usedFirst += player.marchSize;
-    } else if (usedSecond + player.marchSize <= secondCapacity) {
-      secondShift.push(player);
-      usedSecond += player.marchSize;
-    }
-  }
-
-  return {
-    captain,
-    firstShift,
-    secondShift,
-    usedCapacity: usedFirst + usedSecond + (capInFirst ? capFirst : 0) + (capInSecond ? capSecond : 0)
-  };
-}
-
-function organizeReserve(players: Player[]): Reserve {
-  const reserve: Reserve = {
-    firstShift: { fighter: [], shooter: [], rider: [] },
-    secondShift: { fighter: [], shooter: [], rider: [] }
-  };
-
-  for (const player of players) {
-    const types = getTroopTypes(player);
-    if (player.firstShift) {
-      types.forEach(t => reserve.firstShift[t].push(player));
-    }
-    if (player.secondShift) {
-      types.forEach(t => reserve.secondShift[t].push(player));
-    }
-  }
-
-  Object.values(reserve.firstShift).forEach(arr => arr.sort((a, b) => b.marchSize - a.marchSize));
-  Object.values(reserve.secondShift).forEach(arr => arr.sort((a, b) => b.marchSize - a.marchSize));
-
-  return reserve;
-}
-
-function getTroopTypes(player: Player): string[] {
-  const types = [];
-  if (player.troopFighter) types.push('fighter');
-  if (player.troopShooter) types.push('shooter');
-  if (player.troopRider) types.push('rider');
-  return types;
-}
-
-function isPlayerCompatible(player: Player, allowed: string[]): boolean {
-  return getTroopTypes(player).some(t => allowed.includes(t));
+// Проверяет, назначен ли игрок уже в какое-то здание
+function isPlayerAssigned(
+  playerId: string,
+  existingBuildings: IBuildings[]
+): boolean {
+  return existingBuildings.some(b =>
+    b.players.some(p => p.player.id === playerId)
+  );
 }
