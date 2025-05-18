@@ -227,7 +227,7 @@ function AdminMain() {
     queryFn: fetchWastelandDates
   });
   console.log(dates)
-  const {data: playersData, isLoading: playesrsIsLoading, isError: playersIsError, error: playersError} = useQuery({
+  const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
     queryKey: ['players'],
     queryFn: () => fetchPlayers(dates!),
     enabled: !!dates
@@ -282,7 +282,7 @@ function AdminMain() {
     });
   };
 
-  if (datesIsloading || playesrsIsLoading) return <div>Loading...</div>;
+  if (datesIsloading || playersIsLoading) return <div>Loading...</div>;
   if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
   if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
   return (

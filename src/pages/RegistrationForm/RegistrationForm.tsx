@@ -236,7 +236,7 @@ const RegistrationForm = () => {
   if (datesIsloading || !dates) return <div>Loading...</div>;
   if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
 
-  if(DateTime.now() >= DateTime.fromJSDate(dates.nextDate).minus({hours: 12}) || DateTime.now() <= DateTime.fromJSDate(dates.lastDate).plus({hours: 36})) {
+  if(DateTime.now() >= DateTime.fromJSDate(dates.nextDate).minus({hours: 36}) || DateTime.now() <= DateTime.fromJSDate(dates.lastDate).plus({hours: 36})) {
     return <Alert variant={'danger'}>The event is very close or already underway. Registration is closed. Thank you!</Alert>
   }
 
