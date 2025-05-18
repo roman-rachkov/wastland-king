@@ -33,6 +33,7 @@ import marchSize from "../../assets/images/marchSize.png";
 import firstShift from "../../assets/images/1-shift.png";
 import secondShift from "../../assets/images/2-shift.png";
 import capitan from "../../assets/images/capitan.png";
+import attackDefense from "../../assets/images/attack-defense.png";
 import rallySize from "../../assets/images/rally-size.jpg";
 import {fetchWastelandDates} from "../../api/fetchWastelandDates.ts";
 
@@ -58,6 +59,7 @@ const RegistrationForm = () => {
     mode: 'onChange', defaultValues: {
       troopTier: 10,
       isCapitan: false,
+      isAttack: false,
       troopFighter: false,
       troopRider: false,
       troopShooter: false,
@@ -119,6 +121,7 @@ const RegistrationForm = () => {
     if (existingData) {
       setValue('troopTier', existingData.troopTier);
       setValue('isCapitan', existingData.isCapitan);
+      setValue('isAttack', existingData.isAttack);
     }
   }, [existingData, setValue]);
 
@@ -159,6 +162,7 @@ const RegistrationForm = () => {
       try {
         const playerData = {
           ...data,
+          isAttack: data.isAttack ?? false,
           createdAt: existingData?.createdAt || DateTime.now().toJSDate(),
           updatedAt: DateTime.now().toJSDate(),
         };
@@ -183,6 +187,7 @@ const RegistrationForm = () => {
       reset({
         troopTier: undefined,
         isCapitan: false,
+        isAttack: false,
       });
       navigate('/thanks')
     },
@@ -317,7 +322,36 @@ const RegistrationForm = () => {
                     </Col>
                   </Row>
                 </FormGroup>
-
+                <FormGroup className='mb-4'>
+                  <Row className='flex-column'>
+                    <FormLabel>Defense or Attack?</FormLabel>
+                    <FormText>In defense you need go to [841] and stay in our region. <br/>
+                      In attack you need go to attack ali (changeable) and attack another region</FormText>
+                    <Col className='d-flex mb-2' md={4}>
+                      <Controller
+                        name="isAttack"
+                        control={control}
+                        render={({field}) => (
+                          <div className="d-flex gap-3">
+                            {[true, false].map((value) => (
+                              <FormCheck
+                                key={value.toString()}
+                                type="radio"
+                                label={value ? 'Attack' : 'Defense'}
+                                id={`attack-${value}`}
+                                checked={field.value === value}
+                                onChange={() => field.onChange(value)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      />
+                    </Col>
+                    <Col md={4}>
+                      <Image src={attackDefense} className='w-100 mb-2' loading='lazy'/>
+                    </Col>
+                  </Row>
+                </FormGroup>
                 {/* Типы войск */}
                 <FormGroup>
                   <Row className='mb-4'>

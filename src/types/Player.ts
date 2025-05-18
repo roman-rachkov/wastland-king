@@ -13,4 +13,5 @@ export type Player = {
   isCapitan: boolean;
   marchSize: number;
   rallySize: number;
+  isAttack: boolean;
 };
