@@ -54,6 +54,13 @@ const columns: ColumnDef<Player>[] = [
     header: 'Alliance',
     accessorKey: 'alliance',
   }, {
+    header: 'is Attack',
+    accessorKey: 'isAttack',
+    filterFn: booleanFilter,
+    meta: {
+      filterVariant: 'booleanSelect',
+    },
+  },{
     header: 'First shift',
     accessorKey: 'firstShift',
     filterFn: booleanFilter,
