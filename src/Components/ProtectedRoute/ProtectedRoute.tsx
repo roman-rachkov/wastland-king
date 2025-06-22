@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
-import { getCurrentUser, onAuthStateChange, checkAdminAccess } from '../../services/firebase';
+import { onAuthStateChange, checkAdminAccess } from '../../services/firebase';
 import { User } from 'firebase/auth';
 
 interface ProtectedRouteProps {

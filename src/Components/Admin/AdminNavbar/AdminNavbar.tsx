@@ -1,7 +1,7 @@
 import {Container, Nav, Navbar, Button} from "react-bootstrap";
 import {Link, useNavigate} from "react-router";
 import {useEffect, useState} from "react";
-import {getCurrentUser, signOutUser, onAuthStateChange} from "../../../services/firebase";
+import {signOutUser, onAuthStateChange} from "../../../services/firebase";
 import {User} from "firebase/auth";
 
 const AdminNavbar = () => {

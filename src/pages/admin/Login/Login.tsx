@@ -5,7 +5,6 @@ import { signInWithGoogle, getCurrentUser, checkAdminAccess } from '../../../ser
 import { User } from 'firebase/auth';
 
 const Login = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -13,7 +12,6 @@ const Login = () => {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
-      setUser(currentUser);
       checkAccessAndRedirect(currentUser);
     }
   }, [navigate]);
@@ -37,7 +35,6 @@ const Login = () => {
     setError(null);
     try {
       const user = await signInWithGoogle();
-      setUser(user);
       await checkAccessAndRedirect(user);
     } catch (error) {
       console.error('Login failed:', error);
