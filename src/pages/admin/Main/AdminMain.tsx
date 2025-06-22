@@ -81,8 +81,8 @@ function Filter({ column }: { column: Column<any, unknown> }) {
     >
       {/* See faceted column filters example for dynamic select options */}
       <option value="">All</option>
-      <option value="true">True</option>
-      <option value="false">False</option>
+      <option value="true">{column.id === 'isAttack' ? 'Attack' : 'True'}</option>
+      <option value="false">{column.id === 'isAttack' ? 'Defense' : 'False'}</option>
     </select>
     ) : (
     <DebouncedInput
@@ -154,99 +154,6 @@ function AdminMain() {
 
   const columns: ColumnDef<Player>[] = [
     {
-      header: 'ID',
-      accessorKey: 'id',
-      id: 'id',
-      sortingFn: "text"
-      // sortDescFirst: false,
-    },
-    {
-      header: 'Created At',
-      accessorFn: row => DateTime.fromJSDate(row.createdAt).toFormat('dd.MM.yyyy HH:mm'),
-      sortingFn: "datetime",
-    },
-    {
-      header: 'Updated At',
-      accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
-      sortingFn: "datetime",
-    },
-    {
-      header: 'Name',
-      accessorKey: 'name',
-    }, {
-      header: 'Alliance',
-      accessorKey: 'alliance',
-    }, {
-      header: 'is Attack',
-      accessorKey: 'isAttack',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    },{
-      header: 'First shift',
-      accessorKey: 'firstShift',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'Second Shift',
-      accessorKey: 'secondShift',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'Troop tier',
-      accessorKey: 'troopTier',
-      filterFn: (row, columnId, filterValue) => row.getValue(columnId) === parseInt(filterValue),
-      meta: {
-        filterVariant: 'select',
-      },
-    }, {
-      header: 'Is Fighter',
-      accessorKey: 'troopFighter',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'Is Shooter',
-      accessorKey: 'troopShooter',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'Is Rider',
-      accessorKey: 'troopRider',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'Is Capitan',
-      accessorKey: 'isCapitan',
-      filterFn: booleanFilter,
-      meta: {
-        filterVariant: 'booleanSelect',
-      },
-    }, {
-      header: 'March size',
-      accessorKey: 'marchSize',
-      meta: {
-        filterVariant: 'range',
-      },
-    },
-    {
-      header: 'Rally size',
-      accessorKey: 'rallySize',
-      meta: {
-        filterVariant: 'range',
-      },
-    },
-    {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => {
@@ -270,6 +177,109 @@ function AdminMain() {
           </ButtonGroup>
         );
       },
+    },
+    {
+      header: 'ID',
+      accessorKey: 'id',
+      id: 'id',
+      sortingFn: "text"
+    },
+    {
+      header: 'Name',
+      accessorKey: 'name',
+    }, 
+    {
+      header: 'Alliance',
+      accessorKey: 'alliance',
+    }, 
+    {
+      header: 'March size',
+      accessorKey: 'marchSize',
+      meta: {
+        filterVariant: 'range',
+      },
+    },
+    {
+      header: 'Rally size',
+      accessorKey: 'rallySize',
+      meta: {
+        filterVariant: 'range',
+      },
+    },
+    {
+      header: 'Attack/Defense',
+      accessorKey: 'isAttack',
+      cell: ({ getValue }) => getValue() ? 'Attack' : 'Defense',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    },
+    {
+      header: 'First shift',
+      accessorKey: 'firstShift',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, 
+    {
+      header: 'Second Shift',
+      accessorKey: 'secondShift',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, 
+    {
+      header: 'Troop tier',
+      accessorKey: 'troopTier',
+      filterFn: (row, columnId, filterValue) => row.getValue(columnId) === parseInt(filterValue),
+      meta: {
+        filterVariant: 'select',
+      },
+    }, 
+    {
+      header: 'Is Fighter',
+      accessorKey: 'troopFighter',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, 
+    {
+      header: 'Is Shooter',
+      accessorKey: 'troopShooter',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, 
+    {
+      header: 'Is Rider',
+      accessorKey: 'troopRider',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, 
+    {
+      header: 'Is Capitan',
+      accessorKey: 'isCapitan',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    },
+    {
+      header: 'Created At',
+      accessorFn: row => DateTime.fromJSDate(row.createdAt).toFormat('dd.MM.yyyy HH:mm'),
+      sortingFn: "datetime",
+    },
+    {
+      header: 'Updated At',
+      accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
+      sortingFn: "datetime",
     },
   ];
 
