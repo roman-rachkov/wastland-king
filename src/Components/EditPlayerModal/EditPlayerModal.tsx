@@ -51,6 +51,7 @@ const EditPlayerModal = ({ show, onHide, player, onPlayerUpdated }: EditPlayerMo
     setSuccess(false);
 
     try {
+      console.log('EditPlayerModal: Sending update data:', formData);
       await updatePlayer(player.id, formData);
       setSuccess(true);
       setTimeout(() => {
@@ -58,8 +59,9 @@ const EditPlayerModal = ({ show, onHide, player, onPlayerUpdated }: EditPlayerMo
         onHide();
         setSuccess(false);
       }, 1000);
-    } catch (error) {
-      setError('Failed to update player. Please try again.');
+    } catch (error: any) {
+      console.error('EditPlayerModal: Update error:', error);
+      setError(`Failed to update player: ${error.message}`);
     } finally {
       setLoading(false);
     }
