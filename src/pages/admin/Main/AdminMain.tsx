@@ -20,7 +20,7 @@ import {
 import {Button, Card, Pagination, Table, Form} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useState, useCallback, useMemo} from "react";
 import {fetchPlayers} from "../../../api/fetchPlayers.ts";
 import {fetchAllPlayers} from "../../../api/fetchAllPlayers.ts";
 import {deletePlayer} from "../../../api/deletePlayer.ts";
@@ -144,34 +144,27 @@ function AdminMain() {
     };
   }, []);
 
-  const handleEditPlayer = useCallback((player: Player) => {
-    if (!isMounted) return;
-    console.log('AdminMain: handleEditPlayer called for player:', player.name);
-    setSelectedPlayer(player);
-    setShowEditModal(true);
-  }, [isMounted]);
+  // ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ ВЫЗВАНЫ ДО ЛЮБЫХ УСЛОВНЫХ ОПЕРАТОРОВ
+  const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
+    queryKey: ['wastlandDates'],
+    queryFn: fetchWastelandDates,
+    staleTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 10 * 60 * 1000, // 10 минут
+    retry: 3,
+    retryDelay: 1000,
+  });
+  
+  const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
+    queryKey: ['players', showAllPlayers],
+    queryFn: () => showAllPlayers ? fetchAllPlayers() : fetchPlayers(dates!),
+    enabled: !!dates || showAllPlayers,
+    staleTime: 2 * 60 * 1000, // 2 минуты
+    gcTime: 5 * 60 * 1000, // 5 минут
+    retry: 3,
+    retryDelay: 1000,
+  });
 
-  const handleDeletePlayer = useCallback(async (player: Player) => {
-    if (!isMounted) return;
-    if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
-      try {
-        await deletePlayer(player.id);
-        // Refresh the data
-        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
-        alert('Player deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting player:', error);
-        alert('Failed to delete player. Please try again.');
-      }
-    }
-  }, [queryClient, showAllPlayers, isMounted]);
-
-  const handleShowAllPlayersChange = useCallback((checked: boolean) => {
-    if (!isMounted) return;
-    setShowAllPlayers(checked);
-  }, [isMounted]);
-
-  const columns: ColumnDef<Player>[] = [
+  const columns: ColumnDef<Player>[] = useMemo(() => [
     {
       header: 'Actions',
       id: 'actions',
@@ -290,32 +283,11 @@ function AdminMain() {
       accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
       sortingFn: "datetime",
     },
-  ];
+  ], []);
 
-  const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
-    queryKey: ['wastlandDates'],
-    queryFn: fetchWastelandDates,
-    staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 10 * 60 * 1000, // 10 минут
-    retry: 3,
-    retryDelay: 1000,
-  });
-  
-  const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
-    queryKey: ['players', showAllPlayers],
-    queryFn: () => showAllPlayers ? fetchAllPlayers() : fetchPlayers(dates!),
-    enabled: !!dates || showAllPlayers,
-    staleTime: 2 * 60 * 1000, // 2 минуты
-    gcTime: 5 * 60 * 1000, // 5 минут
-    retry: 3,
-    retryDelay: 1000,
-  });
-
-  // Проверяем, что компонент все еще смонтирован перед рендерингом таблицы
-  const safePlayersData = isMounted ? (playersData || []) : [];
-
+  // Создаем таблицу с безопасными данными - ВСЕГДА ВЫЗЫВАЕМ ХУК
   const table = useReactTable({
-    data: safePlayersData,
+    data: playersData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -339,6 +311,69 @@ function AdminMain() {
       },
     },
   });
+
+  const handleEditPlayer = useCallback((player: Player) => {
+    if (!isMounted) return;
+    console.log('AdminMain: handleEditPlayer called for player:', player.name);
+    setSelectedPlayer(player);
+    setShowEditModal(true);
+  }, [isMounted]);
+
+  const handleDeletePlayer = useCallback(async (player: Player) => {
+    if (!isMounted) return;
+    if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
+      try {
+        await deletePlayer(player.id);
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+        alert('Player deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        alert('Failed to delete player. Please try again.');
+      }
+    }
+  }, [queryClient, showAllPlayers, isMounted]);
+
+  const handleShowAllPlayersChange = useCallback((checked: boolean) => {
+    if (!isMounted) return;
+    setShowAllPlayers(checked);
+  }, [isMounted]);
+
+  // Простое логирование без избыточности
+  console.log('AdminMain:', { isMounted, playersCount: playersData?.length || 0 });
+
+  if (!isMounted) {
+    return null;
+  }
+
+  if (datesIsloading || playersIsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (datesIsError || playersIsError) {
+    return (
+      <div className="text-red-500 p-4">
+        <h2>Ошибка загрузки данных</h2>
+        {datesError && <p>Ошибка дат: {datesError.message}</p>}
+        {playersError && <p>Ошибка игроков: {playersError.message}</p>}
+      </div>
+    );
+  }
+
+  // Защита от создания таблицы с невалидными данными
+  if (!Array.isArray(playersData)) {
+    console.error('AdminMain: playersData is not an array:', playersData);
+    return (
+      <div className="text-red-500 p-4">
+        <h2>Ошибка данных</h2>
+        <p>Данные игроков не являются массивом</p>
+      </div>
+    );
+  }
 
   const handleExport = () => {
     if (!isMounted) return;
@@ -385,10 +420,6 @@ function AdminMain() {
     queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
   };
 
-  if (datesIsloading || playersIsLoading || !isMounted) return <div>Loading...</div>;
-  if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
-  if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
-  
   return (
     <>
       <Card>

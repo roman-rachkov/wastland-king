@@ -37,6 +37,24 @@ console.error = (...args) => {
       stack: new Error().stack
     });
   }
+  
+  // Логируем ошибки React
+  if (args[0] && typeof args[0] === 'string' && args[0].includes('Warning:')) {
+    console.error('React warning detected:', {
+      args,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack
+    });
+  }
+  
+  // Логируем ошибки рендеринга
+  if (args[0] && typeof args[0] === 'string' && (args[0].includes('render') || args[0].includes('component'))) {
+    console.error('React render error detected:', {
+      args,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack
+    });
+  }
 };
 
 const queryClient = new QueryClient({
