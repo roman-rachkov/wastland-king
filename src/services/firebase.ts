@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import {initializeApp} from "firebase/app";
-import {getFirestore} from 'firebase/firestore'
+import {getFirestore, doc, getDoc, collection, getDocs} from 'firebase/firestore'
 import {getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User} from 'firebase/auth'
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -49,4 +49,39 @@ export const getCurrentUser = (): User | null => {
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
+};
+
+// Admin access control functions
+export const checkAdminAccess = async (user: User): Promise<boolean> => {
+  try {
+    // Check if user email is in the allowed admins collection
+    const adminDoc = await getDoc(doc(db, 'admins', user.email || ''));
+    
+    if (adminDoc.exists()) {
+      return true;
+    }
+    
+    // Also check the allowed_emails collection for backward compatibility
+    const allowedEmailsDoc = await getDoc(doc(db, 'allowed_emails', user.email || ''));
+    
+    return allowedEmailsDoc.exists();
+  } catch (error) {
+    console.error('Error checking admin access:', error);
+    return false;
+  }
+};
+
+export const getAllowedAdmins = async (): Promise<string[]> => {
+  try {
+    const adminsSnapshot = await getDocs(collection(db, 'admins'));
+    const allowedEmailsSnapshot = await getDocs(collection(db, 'allowed_emails'));
+    
+    const adminEmails = adminsSnapshot.docs.map(doc => doc.id);
+    const allowedEmails = allowedEmailsSnapshot.docs.map(doc => doc.id);
+    
+    return [...new Set([...adminEmails, ...allowedEmails])];
+  } catch (error) {
+    console.error('Error getting allowed admins:', error);
+    return [];
+  }
 };

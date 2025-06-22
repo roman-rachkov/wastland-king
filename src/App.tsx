@@ -15,6 +15,7 @@ import PublicLayout from "./Layouts/PublicLayout";
 import PlayersList from "./pages/PlayersList";
 import Login from "./pages/admin/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import AdminUsers from "./pages/admin/Settings/AdminUsers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ function App() {
               <Route element={<ProtectedRoute><AdminLayout/></ProtectedRoute>}>
                 <Route index element={<AdminMain/>}/>
                 <Route path={'settings'} element={<Settings/>}/>
+                <Route path={'admin-users'} element={<AdminUsers/>}/>
                 <Route path={'organize-players'} element={<OrganizePlayers/>}/>
               </Route>
             </Route>

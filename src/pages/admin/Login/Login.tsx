@@ -1,31 +1,47 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Container, Row, Col } from 'react-bootstrap';
+import { Button, Card, Container, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router';
-import { signInWithGoogle, getCurrentUser } from '../../../services/firebase';
+import { signInWithGoogle, getCurrentUser, checkAdminAccess } from '../../../services/firebase';
 import { User } from 'firebase/auth';
 
 const Login = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
-      navigate('/admin');
+      checkAccessAndRedirect(currentUser);
     }
   }, [navigate]);
 
+  const checkAccessAndRedirect = async (user: User) => {
+    try {
+      const hasAccess = await checkAdminAccess(user);
+      if (hasAccess) {
+        navigate('/admin');
+      } else {
+        setError(`Access denied. Your account (${user.email}) is not authorized.`);
+      }
+    } catch (error) {
+      console.error('Error checking access:', error);
+      setError('Error checking access. Please try again.');
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setError(null);
     try {
       const user = await signInWithGoogle();
       setUser(user);
-      navigate('/admin');
+      await checkAccessAndRedirect(user);
     } catch (error) {
       console.error('Login failed:', error);
-      alert('Login failed. Please try again.');
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -41,6 +57,13 @@ const Login = () => {
             </Card.Header>
             <Card.Body className="text-center">
               <p className="mb-4">Please sign in with your Google account to access the admin panel.</p>
+              
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+              
               <Button 
                 variant="outline-primary" 
                 size="lg"
@@ -50,6 +73,12 @@ const Login = () => {
               >
                 {loading ? 'Signing in...' : 'Sign in with Google'}
               </Button>
+              
+              <div className="mt-3">
+                <small className="text-muted">
+                  Only authorized users can access the admin panel.
+                </small>
+              </div>
             </Card.Body>
           </Card>
         </Col>
