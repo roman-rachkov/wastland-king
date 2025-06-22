@@ -1,20 +1,47 @@
 import {Player} from "../../../types/Player.ts";
 import {IBuildings, Shift, TBuildingName} from "../../../types/Buildings.tsx";
 
+// Вспомогательная функция для сортировки по приоритету: сначала тир, потом размер марша
+function sortByPriority(a: Player, b: Player): number {
+  // Сначала по уровню войск (тиру), потом по размеру марша
+  if (b.troopTier !== a.troopTier) return b.troopTier - a.troopTier;
+  return normalizeMarchSize(b.rallySize || 0) - normalizeMarchSize(a.rallySize || 0);
+}
+
+// Функция для нормализации размера марша - если число меньше 100000, умножаем на 1000
+function normalizeMarchSize(size: number): number {
+  if (size < 100000 && size > 0) {
+    return size * 1000;
+  }
+  return size;
+}
+
 export function allocatePlayersToBuildings(players: Player[]): IBuildings[] {
   const buildings: IBuildings[] = [];
   const buildingNames: TBuildingName[] = ['HUB', 'North', 'South', 'West', 'East'];
 
-  // Фильтруем обычных игроков (не капитанов) с выбранными сменами
-  const eligiblePlayers = players.filter(p => !p.isCapitan && (p.firstShift || p.secondShift));
+  // Фильтруем обычных игроков (не капитанов) с выбранными сменами для защиты
+  const eligiblePlayers = players.filter(p => 
+    !p.isCapitan && 
+    !p.isAttack && // Только игроки для защиты
+    (p.firstShift || p.secondShift)
+  );
 
-  // Получаем всех капитанов
-  const allCaptains = players.filter(p => p.isCapitan);
+  // Получаем всех капитанов для защиты
+  const allCaptains = players.filter(p => p.isCapitan && !p.isAttack);
 
-  // Разделяем капитанов по доступности смен
-  const firstShiftOnlyCaptains = allCaptains.filter(c => c.firstShift && !c.secondShift);
-  const secondShiftOnlyCaptains = allCaptains.filter(c => !c.firstShift && c.secondShift);
-  const bothShiftsCaptains = allCaptains.filter(c => c.firstShift && c.secondShift);
+  // Разделяем капитанов по доступности смен и сортируем по приоритету
+  const firstShiftOnlyCaptains = allCaptains
+    .filter(c => c.firstShift && !c.secondShift)
+    .sort(sortByPriority);
+    
+  const secondShiftOnlyCaptains = allCaptains
+    .filter(c => !c.firstShift && c.secondShift)
+    .sort(sortByPriority);
+    
+  const bothShiftsCaptains = allCaptains
+    .filter(c => c.firstShift && c.secondShift)
+    .sort(sortByPriority);
 
   // Помечаем использованных капитанов
   const usedCaptains = new Set<string>();
@@ -33,21 +60,14 @@ export function allocatePlayersToBuildings(players: Player[]): IBuildings[] {
     const shiftKey = slot.shift === Shift.first ? 'firstShift' : 'secondShift';
     let captain: Player | undefined;
 
-    // 1. Пробуем найти капитана только для этой смены
-    if (slot.shift === Shift.first) {
-      captain = firstShiftOnlyCaptains.find(c => !usedCaptains.has(c.id));
-    } else {
-      captain = secondShiftOnlyCaptains.find(c => !usedCaptains.has(c.id));
-    }
+    // 1. Сначала ищем лучшего капитана для этой смены (включая капитанов на две смены)
+    const availableCaptains = allCaptains.filter(c => 
+      c[shiftKey] && !usedCaptains.has(c.id)
+    ).sort(sortByPriority);
+    
+    captain = availableCaptains[0]; // Берем лучшего доступного капитана
 
-    // 2. Если не нашли, пробуем капитана на две смены
-    if (!captain) {
-      captain = bothShiftsCaptains.find(c =>
-        c[shiftKey] && !usedCaptains.has(c.id)
-      );
-    }
-
-    // 3. Если капитана нет - оставляем здание пустым
+    // 2. Если капитана нет - оставляем здание пустым
     if (!captain) {
       buildings.push({
         buildingName: slot.buildingName,
@@ -90,7 +110,7 @@ function createBuilding(
     buildingName,
     capitan: captain,
     shift,
-    rallySize: captain.rallySize,
+    rallySize: normalizeMarchSize(captain.rallySize),
     players: []
   };
 
@@ -100,7 +120,7 @@ function createBuilding(
   if (captain.troopShooter) neededTroopTypes.push('troopShooter');
   if (captain.troopRider) neededTroopTypes.push('troopRider');
 
-  if (neededTroopTypes.length === 0 || captain.rallySize <= 0) {
+  if (neededTroopTypes.length === 0 || normalizeMarchSize(captain.rallySize) <= 0) {
     return building;
   }
 
@@ -110,18 +130,19 @@ function createBuilding(
     neededTroopTypes.some(type => p[type]) &&
     !isPlayerAssigned(p.id, existingBuildings)
   ).sort((a, b) => {
-    // Сортируем по убыванию: тир -> marchSize
+    // Сортируем по приоритету: сначала тир (уровень войск), потом размер марша
     if (b.troopTier !== a.troopTier) return b.troopTier - a.troopTier;
-    return b.marchSize - a.marchSize;
+    return normalizeMarchSize(b.marchSize) - normalizeMarchSize(a.marchSize);
   });
 
-  let remainingRallySize = captain.rallySize;
+  let remainingRallySize = normalizeMarchSize(captain.rallySize);
 
   // Распределяем игроков
   for (const player of shiftPlayers) {
     if (remainingRallySize <= 0) break;
 
-    const assignedSize = Math.min(player.marchSize, remainingRallySize);
+    const playerMarchSize = normalizeMarchSize(player.marchSize);
+    const assignedSize = Math.min(playerMarchSize, remainingRallySize);
     building.players.push({
       player: player,
       march: assignedSize

@@ -14,3 +14,25 @@ export interface IBuildings {
   rallySize: Player['rallySize']; // rallySize капитана
   players: { player: Player; march: Player['marchSize'] }[];
 }
+
+// Новые типы для расписания
+export interface ISchedule {
+  id: string;
+  eventDate: Date;
+  buildings: IBuildings[];
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string; // email админа
+}
+
+export interface IPlayerAssignment {
+  playerId: string;
+  buildingName: TBuildingName;
+  shift: Shift;
+  march: number;
+}
+
+export interface IAvailablePlayer extends Player {
+  isAssigned: boolean;
+  assignedBuildings: IPlayerAssignment[];
+}
