@@ -13,6 +13,8 @@ import Settings from "./pages/admin/Settings";
 import OrganizePlayers from "./pages/admin/OrganizePlayers";
 import PublicLayout from "./Layouts/PublicLayout";
 import PlayersList from "./pages/PlayersList";
+import Login from "./pages/admin/Login";
+import ProtectedRoute from "./Components/ProtectedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,7 +39,8 @@ function App() {
             </Route>
             <Route path={'thanks'} element={<ThanksPage/>}/>
             <Route path={'admin'}>
-              <Route element={<AdminLayout/>}>
+              <Route path={'login'} element={<Login/>}/>
+              <Route element={<ProtectedRoute><AdminLayout/></ProtectedRoute>}>
                 <Route index element={<AdminMain/>}/>
                 <Route path={'settings'} element={<Settings/>}/>
                 <Route path={'organize-players'} element={<OrganizePlayers/>}/>
