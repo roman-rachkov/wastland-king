@@ -11,6 +11,8 @@ import SchedulePage from "./pages/Schedule";
 import AdminLayout from "./Layouts/AdminLayout/AdminLayout.tsx";
 import Settings from "./pages/admin/Settings";
 import OrganizePlayers from "./pages/admin/OrganizePlayers";
+import PublicLayout from "./Layouts/PublicLayout";
+import PlayersList from "./pages/PlayersList";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,9 +30,12 @@ function App() {
         <HeaderBanner/>
         <BrowserRouter>
           <Routes>
-            <Route index path={'/'} element={<RegistrationForm/>}/>
-            <Route index path={'/thanks'} element={<ThanksPage/>}/>
-            <Route index path={'/schedule'} element={<SchedulePage/>}/>
+            <Route path={'/'} element={<PublicLayout/>}>
+              <Route index element={<RegistrationForm/>}/>
+              <Route path={'players'} element={<PlayersList/>}/>
+              <Route path={'schedule'} element={<SchedulePage/>}/>
+            </Route>
+            <Route path={'thanks'} element={<ThanksPage/>}/>
             <Route path={'admin'}>
               <Route element={<AdminLayout/>}>
                 <Route index element={<AdminMain/>}/>
