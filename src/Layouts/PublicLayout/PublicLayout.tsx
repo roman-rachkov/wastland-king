@@ -16,7 +16,7 @@ const PublicLayout = () => {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      <Container className="mt-4">
+      <Container className="mt-4 flex-grow-1 d-flex flex-column">
         <Outlet/>
       </Container>
     </>

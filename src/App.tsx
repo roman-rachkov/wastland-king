@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Container className={'position-relative min-vh-100 h-100'}>
+      <Container className={'position-relative min-vh-100 h-100 d-flex flex-column'}>
         <HeaderBanner/>
         <BrowserRouter>
           <Routes>
