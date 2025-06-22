@@ -1,4 +1,4 @@
-import { doc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase.ts";
 
 export const deletePlayer = async (playerId: string): Promise<void> => {

@@ -1,5 +1,5 @@
 import { Player } from "../types/Player.ts";
-import { doc, updateDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase.ts";
 
 export const updatePlayer = async (playerId: string, updatedData: Partial<Player>): Promise<void> => {
