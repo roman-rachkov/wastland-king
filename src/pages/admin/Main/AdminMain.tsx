@@ -17,7 +17,7 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table';
-import {Button, Card, Pagination, Table, Form, ButtonGroup} from "react-bootstrap";
+import {Button, Card, Pagination, Table, Form} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
 import {useEffect, useState, useCallback} from "react";
@@ -25,6 +25,8 @@ import {fetchPlayers} from "../../../api/fetchPlayers.ts";
 import {fetchAllPlayers} from "../../../api/fetchAllPlayers.ts";
 import {deletePlayer} from "../../../api/deletePlayer.ts";
 import EditPlayerModal from "../../../Components/EditPlayerModal";
+import ColumnVisibilityToggle from "../../../Components/ColumnVisibilityToggle";
+import ActionsMenu from "../../../Components/ActionsMenu";
 
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
@@ -134,6 +136,7 @@ function AdminMain() {
   const queryClient = useQueryClient();
 
   const handleEditPlayer = useCallback((player: Player) => {
+    console.log('AdminMain: handleEditPlayer called for player:', player.name);
     setSelectedPlayer(player);
     setShowEditModal(true);
   }, []);
@@ -156,25 +159,15 @@ function AdminMain() {
     {
       header: 'Actions',
       id: 'actions',
+      enableHiding: false, // Нельзя скрыть столбец действий
       cell: ({ row }) => {
         const player = row.original;
         return (
-          <ButtonGroup size="sm">
-            <Button 
-              variant="outline-primary" 
-              size="sm"
-              onClick={() => handleEditPlayer(player)}
-            >
-              Edit
-            </Button>
-            <Button 
-              variant="outline-danger" 
-              size="sm"
-              onClick={() => handleDeletePlayer(player)}
-            >
-              Delete
-            </Button>
-          </ButtonGroup>
+          <ActionsMenu
+            player={player}
+            onEdit={handleEditPlayer}
+            onDelete={handleDeletePlayer}
+          />
         );
       },
     },
@@ -306,9 +299,18 @@ function AdminMain() {
       sorting: [
         {
           id: 'id',
-          desc: false, // sort by name in descending order by default
+          desc: false,
         },
       ],
+      columnVisibility: {
+        // По умолчанию скрываем некоторые столбцы для лучшего UX
+        'Created At': false,
+        'Updated At': false,
+        'Is Fighter': false,
+        'Is Shooter': false,
+        'Is Rider': false,
+        'Is Capitan': false,
+      },
     },
   });
 
@@ -356,8 +358,8 @@ function AdminMain() {
     <>
       <Card>
         <Card.Header className={'d-flex justify-content-between align-items-center'}>
-          <div className="d-flex align-items-center">
-            <h2 className="mb-0 me-3">List of players</h2>
+          <div className="d-flex align-items-center gap-3">
+            <h2 className="mb-0">List of players</h2>
             <Form.Check
               type="switch"
               id="show-all-players"
@@ -365,64 +367,91 @@ function AdminMain() {
               checked={showAllPlayers}
               onChange={(e) => setShowAllPlayers(e.target.checked)}
             />
+            <ColumnVisibilityToggle
+              columns={table.getAllLeafColumns()}
+              onToggleColumn={(columnId, visible) => {
+                table.getColumn(columnId)?.toggleVisibility(visible);
+              }}
+            />
           </div>
           <Button onClick={handleExport}>
             Download {showAllPlayers ? 'all players' : 'current players'} xlsx
           </Button>
         </Card.Header>
         <Card.Body>
-          <Table responsive className="w-full border-collapse">
-            <thead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  return (
-                    <th key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : (
-                        <>
-                          <div
-                            {...{
-                              className: header.column.getCanSort()
-                                ? 'cursor-pointer select-none'
-                                : '',
-                              onClick: header.column.getToggleSortingHandler(),
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc: ' 🔼',
-                              desc: ' 🔽',
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                          {header.column.getCanFilter() ? (
-                            <div>
-                              <Filter column={header.column} />
+          <div className="table-responsive" style={{ position: 'relative' }}>
+            <Table className="w-full border-collapse">
+              <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => {
+                    return (
+                      <th 
+                        key={header.id} 
+                        colSpan={header.colSpan}
+                        style={{
+                          position: header.id === 'actions' ? 'sticky' : 'static',
+                          left: header.id === 'actions' ? 0 : 'auto',
+                          backgroundColor: header.id === 'actions' ? 'white' : 'transparent',
+                          zIndex: header.id === 'actions' ? 100 : 1,
+                          borderRight: header.id === 'actions' ? '2px solid #dee2e6' : 'none',
+                        }}
+                      >
+                        {header.isPlaceholder ? null : (
+                          <>
+                            <div
+                              {...{
+                                className: header.column.getCanSort()
+                                  ? 'cursor-pointer select-none'
+                                  : '',
+                                onClick: header.column.getToggleSortingHandler(),
+                              }}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                              {{
+                                asc: ' 🔼',
+                                desc: ' 🔽',
+                              }[header.column.getIsSorted() as string] ?? null}
                             </div>
-                          ) : null}
-                        </>
-                      )}
-                    </th>
-                  )
-                })}
-              </tr>
-            ))}
-            </thead>
-            <tbody>
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="border-b p-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            </tbody>
-          </Table>
-
+                            {header.column.getCanFilter() ? (
+                              <div>
+                                <Filter column={header.column} />
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+                      </th>
+                    )
+                  })}
+                </tr>
+              ))}
+              </thead>
+              <tbody>
+              {table.getRowModel().rows.map(row => (
+                <tr key={row.id} className="hover:bg-gray-50">
+                  {row.getVisibleCells().map(cell => (
+                    <td 
+                      key={cell.id} 
+                      className="border-b p-2"
+                      style={{
+                        position: cell.column.id === 'actions' ? 'sticky' : 'static',
+                        left: cell.column.id === 'actions' ? 0 : 'auto',
+                        backgroundColor: cell.column.id === 'actions' ? 'white' : 'transparent',
+                        zIndex: cell.column.id === 'actions' ? 100 : 1,
+                        borderRight: cell.column.id === 'actions' ? '2px solid #dee2e6' : 'none',
+                      }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              </tbody>
+            </Table>
+          </div>
         </Card.Body>
         <Card.Footer className={'d-flex justify-content-between'}>
           <Pagination>
