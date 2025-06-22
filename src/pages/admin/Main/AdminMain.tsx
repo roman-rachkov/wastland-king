@@ -67,7 +67,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   ) : filterVariant === 'select' ? (
     <select
       onChange={e => column.setFilterValue(e.target.value)}
-      value={parseInt(columnFilterValue as string)}
+      value={columnFilterValue && columnFilterValue !== '' ? parseInt(columnFilterValue as string) : ''}
     >
       {/* See faceted column filters example for dynamic select options */}
       <option value="">All</option>
@@ -278,14 +278,17 @@ function AdminMain() {
 
   const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
     queryKey: ['wastelandDates'],
-    queryFn: fetchWastelandDates
+    queryFn: fetchWastelandDates,
+    staleTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 10 * 60 * 1000, // 10 минут
   });
-  console.log(dates)
   
   const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
     queryKey: ['players', showAllPlayers],
     queryFn: () => showAllPlayers ? fetchAllPlayers() : fetchPlayers(dates!),
-    enabled: !!dates || showAllPlayers
+    enabled: !!dates || showAllPlayers,
+    staleTime: 2 * 60 * 1000, // 2 минуты
+    gcTime: 5 * 60 * 1000, // 5 минут
   });
 
   const table = useReactTable({
