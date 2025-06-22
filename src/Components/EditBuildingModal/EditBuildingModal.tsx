@@ -28,6 +28,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const [rallySize, setRallySize] = useState<number>(building.rallySize || 0);
   const [error, setError] = useState<string>('');
   const [excludedPlayers, setExcludedPlayers] = useState<string[]>([]);
+  const [assignedPlayerIds, setAssignedPlayerIds] = useState<Set<string>>(new Set());
+  const [assignedCaptainIds, setAssignedCaptainIds] = useState<Set<string>>(new Set());
+  const [previousCaptainId, setPreviousCaptainId] = useState<string>('');
 
   // Функция для нормализации размера марша - если число меньше 100000, умножаем на 1000
   const normalizeMarchSize = (size: number): number => {
@@ -37,6 +40,34 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     return size;
   };
 
+  // Функция для обновления списков назначенных игроков и капитанов
+  const updateAssignedLists = () => {
+    const newAssignedPlayerIds = new Set<string>();
+    const newAssignedCaptainIds = new Set<string>();
+
+    allBuildings.forEach(otherBuilding => {
+      // Пропускаем текущее здание
+      if (otherBuilding.buildingName === building.buildingName && otherBuilding.shift === building.shift) {
+        return;
+      }
+      
+      // Если здание в той же смене, добавляем всех игроков в список исключенных
+      if (otherBuilding.shift === building.shift) {
+        // Добавляем капитана в отдельный список
+        if (otherBuilding.capitan?.id) {
+          newAssignedCaptainIds.add(otherBuilding.capitan.id);
+        }
+        // Добавляем обычных игроков
+        otherBuilding.players.forEach(p => {
+          newAssignedPlayerIds.add(p.player.id);
+        });
+      }
+    });
+
+    setAssignedPlayerIds(newAssignedPlayerIds);
+    setAssignedCaptainIds(newAssignedCaptainIds);
+  };
+
   useEffect(() => {
     setEditedBuilding(building);
     setSelectedCaptain(building.capitan?.id || '');
@@ -44,7 +75,14 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     setRallySize(building.rallySize || 0);
     setError('');
     setExcludedPlayers([]);
-  }, [building]);
+    updateAssignedLists();
+  }, [building, allBuildings]);
+
+  // Пересчитываем список игроков при изменении выбранного капитана
+  useEffect(() => {
+    // Очищаем список исключенных игроков при смене капитана
+    setExcludedPlayers([]);
+  }, [selectedCaptain]);
 
   const getTroopTypes = (player: Player) => {
     if (!player) return [];
@@ -56,47 +94,60 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     return types;
   };
 
-  const getCaptainsForShift = () => {
+  const captains = React.useMemo(() => {
     const shiftKey = building.shift === Shift.first ? 'firstShift' : 'secondShift';
-    const captains = availablePlayers.filter(p => 
-      p.isCapitan && (p[shiftKey] || (p.firstShift && p.secondShift))
-    );
     
-    // Сортируем капитанов по размеру ралли (по убыванию)
-    return captains.sort((a, b) => (b.rallySize || 0) - (a.rallySize || 0));
+    // Получаем ID игроков, выбранных в текущем здании
+    const currentSelectedPlayerIds = new Set(selectedPlayers.map(sp => sp.playerId));
+    
+    return availablePlayers
+      .filter(p => 
+        p.isCapitan && 
+        (p[shiftKey] || (p.firstShift && p.secondShift)) &&
+        !assignedCaptainIds.has(p.id) &&
+        !assignedPlayerIds.has(p.id) && // Исключаем капитанов, которые уже назначены как игроки в другие здания
+        !currentSelectedPlayerIds.has(p.id) // Исключаем капитанов, которые выбраны как игроки в текущем здании
+      )
+      .sort((a, b) => {
+        // Сортируем по приоритету: сначала тир, потом размер марша
+        if (b.troopTier !== a.troopTier) return b.troopTier - a.troopTier;
+        return normalizeMarchSize(b.rallySize || 0) - normalizeMarchSize(a.rallySize || 0);
+      });
+  }, [building.shift, availablePlayers, assignedCaptainIds, assignedPlayerIds, selectedPlayers]);
+
+  const getCaptainInfo = (captain: Player) => {
+    if (!captain) return null;
+    
+    const troopTypes = getTroopTypes(captain);
+    return (
+      <div className="mt-2">
+        <small className="text-muted">
+          <strong>Troop Types:</strong> {troopTypes.map(type => (
+            <Badge key={type} bg="primary" className="me-1">
+              {type}
+            </Badge>
+          ))}
+          <Badge bg="secondary" className="ms-2">Tier: {captain.troopTier}</Badge>
+          <Badge bg="info" className="ms-2">March: {captain.marchSize}</Badge>
+        </small>
+      </div>
+    );
   };
 
-  const getPlayersForShift = () => {
+  const players = React.useMemo(() => {
     const shiftKey = building.shift === Shift.first ? 'firstShift' : 'secondShift';
     
-    // Получаем ID игроков, уже назначенных в другие здания в эту смену
-    const assignedPlayerIds = new Set<string>();
-    const assignedCaptainIds = new Set<string>();
-    
-    allBuildings.forEach(otherBuilding => {
-      // Пропускаем текущее здание
-      if (otherBuilding.buildingName === building.buildingName && otherBuilding.shift === building.shift) {
-        return;
-      }
-      
-      // Если здание в той же смене, добавляем всех игроков в список исключенных
-      if (otherBuilding.shift === building.shift) {
-        // Добавляем капитана в отдельный список
-        if (otherBuilding.capitan?.id) {
-          assignedCaptainIds.add(otherBuilding.capitan.id);
-        }
-        // Добавляем обычных игроков
-        otherBuilding.players.forEach(p => {
-          assignedPlayerIds.add(p.player.id);
-        });
-      }
-    });
-
+    // Получаем типы войск выбранного капитана
     const currentCaptain = availablePlayers.find(p => p.id === selectedCaptain);
     const captainTroopTypes = currentCaptain ? getTroopTypes(currentCaptain) : [];
 
     return availablePlayers.filter(p => {
       if (!p) return false;
+      
+      // Исключаем выбранного капитана из списка игроков
+      if (p.id === selectedCaptain) {
+        return false;
+      }
       
       const isAvailableForShift = 
         (p[shiftKey] || (p.firstShift && p.secondShift)) &&
@@ -107,16 +158,42 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       // Если капитан не выбран, показываем всех игроков (включая капитанов, которые не назначены как капитаны)
       if (!currentCaptain || captainTroopTypes.length === 0) {
         // Исключаем капитанов, которые уже назначены как капитаны в другие здания
+        // НО не исключаем предыдущего капитана
         if (p.isCapitan && assignedCaptainIds.has(p.id)) {
+          // Проверяем, не является ли это предыдущим капитаном
+          if (p.id === previousCaptainId) {
+            return true; // Предыдущий капитан должен быть доступен как игрок
+          }
           return false;
         }
         return true;
       }
       
-      // Если капитан выбран, исключаем капитанов из списка игроков
-      if (p.isCapitan) return false;
+      // Если капитан выбран, показываем обычных игроков и капитанов, которые не назначены как капитаны
+      if (p.isCapitan) {
+        // Исключаем капитанов, которые уже назначены как капитаны в другие здания
+        // НО не исключаем предыдущего капитана
+        if (assignedCaptainIds.has(p.id)) {
+          // Проверяем, не является ли это предыдущим капитаном
+          if (p.id === previousCaptainId) {
+            // Предыдущий капитан должен подчиняться логике фильтрации по типу войск
+            const playerTroopTypes = getTroopTypes(p);
+            const hasMatchingTroopType = playerTroopTypes.some(type => 
+              captainTroopTypes.includes(type)
+            );
+            return hasMatchingTroopType;
+          }
+          return false;
+        }
+        // Капитаны как игроки должны подчиняться той же логике фильтрации по типу войск
+        const playerTroopTypes = getTroopTypes(p);
+        const hasMatchingTroopType = playerTroopTypes.some(type => 
+          captainTroopTypes.includes(type)
+        );
+        return hasMatchingTroopType;
+      }
       
-      // Фильтруем по типу войск капитана
+      // Фильтруем обычных игроков по типу войск капитана
       const playerTroopTypes = getTroopTypes(p);
       const hasMatchingTroopType = playerTroopTypes.some(type => 
         captainTroopTypes.includes(type)
@@ -124,15 +201,31 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       
       return hasMatchingTroopType;
     }).sort((a, b) => (b.troopTier || 0) - (a.troopTier || 0)); // Сортируем по тиру (по убыванию)
-  };
+  }, [selectedCaptain, building, availablePlayers, assignedPlayerIds, assignedCaptainIds, previousCaptainId]);
 
   const handleCaptainChange = (captainId: string) => {
-    const captain = availablePlayers.find(p => p.id === captainId);
-    setSelectedCaptain(captainId);
-    setRallySize(captain ? normalizeMarchSize(captain.rallySize || 0) : 0);
+    const newCaptain = availablePlayers.find(p => p.id === captainId);
+    const oldCaptainId = selectedCaptain;
     
-    if (captain) {
-      const captainTroopTypes = getTroopTypes(captain);
+    setPreviousCaptainId(oldCaptainId);
+    setSelectedCaptain(captainId);
+    setRallySize(newCaptain ? normalizeMarchSize(newCaptain.rallySize || 0) : 0);
+    
+    // Очищаем список исключенных игроков при смене капитана
+    setExcludedPlayers([]);
+    
+    // Удаляем старого капитана из списка выбранных игроков
+    setSelectedPlayers(prev => {
+      let filtered = prev.filter(sp => sp.playerId !== oldCaptainId);
+      
+      // Удаляем нового капитана из списка выбранных игроков (если он там был)
+      filtered = filtered.filter(sp => sp.playerId !== captainId);
+      
+      return filtered;
+    });
+    
+    if (newCaptain) {
+      const captainTroopTypes = getTroopTypes(newCaptain);
       
       if (captainTroopTypes.length > 0) {
         const excluded: string[] = [];
@@ -216,27 +309,19 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     onHide();
   };
 
-  const getCaptainInfo = (captain: Player) => {
-    if (!captain) return null;
-    
-    const troopTypes = getTroopTypes(captain);
-    return (
-      <div className="mt-2">
-        <small className="text-muted">
-          <strong>Troop Types:</strong> {troopTypes.map(type => (
-            <Badge key={type} bg="primary" className="me-1">
-              {type}
-            </Badge>
-          ))}
-          <Badge bg="secondary" className="ms-2">Tier: {captain.troopTier}</Badge>
-          <Badge bg="info" className="ms-2">March: {captain.marchSize}</Badge>
-        </small>
-      </div>
-    );
+  const handleClearBuilding = () => {
+    if (window.confirm('Are you sure you want to clear this building? This will remove all captain and player assignments.')) {
+      const clearedBuilding: IBuildings = {
+        ...editedBuilding,
+        capitan: {} as Player,
+        rallySize: 0,
+        players: []
+      };
+      onSave(clearedBuilding);
+      onHide();
+    }
   };
 
-  const captains = getCaptainsForShift();
-  const players = getPlayersForShift();
   const totalMarch = selectedPlayers.reduce((sum, p) => sum + p.march, 0);
 
   return (
@@ -261,7 +346,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         
         <Form>
           <Form.Group className="mb-3">
-            <Form.Label>Captain</Form.Label>
+            <Form.Label>Available Captains</Form.Label>
             <Form.Select 
               value={selectedCaptain} 
               onChange={(e) => handleCaptainChange(e.target.value)}
@@ -278,6 +363,11 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 );
               })}
             </Form.Select>
+            {captains.length === 0 && (
+              <Alert variant="warning" className="mt-2">
+                No available captains for this shift. All captains are already assigned to other buildings.
+              </Alert>
+            )}
             {selectedCaptain && (
               <div className="mt-2">
                 {(() => {
@@ -303,8 +393,8 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             {players.length === 0 ? (
               <Alert variant="info">
                 {selectedCaptain ? 
-                  'No available players for this shift with matching troop types to the selected captain.' :
-                  'No available players for this shift. All players are already assigned to other buildings in this shift.'
+                  'No available players or captains for this shift with matching troop types to the selected captain.' :
+                  'No available players for this shift. All players and captains are already assigned to other buildings in this shift.'
                 }
               </Alert>
             ) : (
@@ -377,6 +467,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         </Form>
       </Modal.Body>
       <Modal.Footer>
+        <Button variant="danger" onClick={handleClearBuilding} className="me-auto">
+          Clear Building
+        </Button>
         <Button variant="secondary" onClick={onHide}>
           Cancel
         </Button>
