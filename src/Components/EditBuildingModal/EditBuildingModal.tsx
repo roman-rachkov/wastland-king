@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Table, Alert, Badge } from 'react-bootstrap';
-import { IBuildings, TBuildingName, Shift } from '../../types/Buildings';
+import { IBuildings, Shift } from '../../types/Buildings';
 import { Player } from '../../types/Player';
 
 interface EditBuildingModalProps {

@@ -30,19 +30,6 @@ export function allocatePlayersToBuildings(players: Player[]): IBuildings[] {
   // Получаем всех капитанов для защиты
   const allCaptains = players.filter(p => p.isCapitan && !p.isAttack);
 
-  // Разделяем капитанов по доступности смен и сортируем по приоритету
-  const firstShiftOnlyCaptains = allCaptains
-    .filter(c => c.firstShift && !c.secondShift)
-    .sort(sortByPriority);
-    
-  const secondShiftOnlyCaptains = allCaptains
-    .filter(c => !c.firstShift && c.secondShift)
-    .sort(sortByPriority);
-    
-  const bothShiftsCaptains = allCaptains
-    .filter(c => c.firstShift && c.secondShift)
-    .sort(sortByPriority);
-
   // Помечаем использованных капитанов
   const usedCaptains = new Set<string>();
 

@@ -72,21 +72,6 @@ const AvailablePlayersList: React.FC<AvailablePlayersListProps> = ({ players, bu
     return shifts;
   };
 
-  const getShiftsCount = (player: Player) => {
-    let count = 0;
-    if (player.firstShift) count++;
-    if (player.secondShift) count++;
-    return count;
-  };
-
-  const getTroopTypesCount = (player: Player) => {
-    let count = 0;
-    if (player.troopFighter) count++;
-    if (player.troopShooter) count++;
-    if (player.troopRider) count++;
-    return count;
-  };
-
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Player',
@@ -232,7 +217,7 @@ const AvailablePlayersList: React.FC<AvailablePlayersListProps> = ({ players, bu
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     filterFns: {
-      troopTypeFilter: (row, columnId, filterValue) => {
+      troopTypeFilter: (row, _, filterValue) => {
         const player = row.original;
         if (!filterValue || filterValue === 'all') return true;
         
@@ -247,7 +232,7 @@ const AvailablePlayersList: React.FC<AvailablePlayersListProps> = ({ players, bu
             return true;
         }
       },
-      shiftFilter: (row, columnId, filterValue) => {
+      shiftFilter: (row, _, filterValue) => {
         const player = row.original;
         if (!filterValue || filterValue === 'all') return true;
         

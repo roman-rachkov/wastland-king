@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWastelandDates } from "../../../api/fetchWastelandDates.ts";
-import { fetchAllDefensePlayers, fetchAttackPlayers } from "../../../api/scheduleApi.ts";
+import { fetchDefensePlayers, fetchAttackPlayers } from "../../../api/scheduleApi.ts";
 import { fetchScheduleByEventDate, saveSchedule, updateSchedule } from "../../../api/scheduleApi.ts";
-import { Card, Col, Row, Table, Button, Alert, Badge, Modal, Form } from "react-bootstrap";
+import { Card, Col, Row, Table, Button, Alert, Badge, Modal, Pagination } from "react-bootstrap";
 import { allocatePlayersToBuildings } from "./utils.tsx";
 import { IBuildings, Shift, ISchedule, TBuildingName, IAttackPlayer } from "../../../types/Buildings.tsx";
 import { Player } from "../../../types/Player.ts";
@@ -21,6 +21,9 @@ const OrganizePlayers = () => {
   const [showStats, setShowStats] = useState(true);
   const [saveNotification, setSaveNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
+  // Пагинация для зданий
+  const [itemsPerPage] = useState(15);
+  
   const queryClient = useQueryClient();
 
   // Загрузка дат события
@@ -29,16 +32,18 @@ const OrganizePlayers = () => {
     queryFn: fetchWastelandDates
   });
 
-  // Загрузка ВСЕХ игроков для защиты (без ограничений по датам)
+  // Загрузка игроков для защиты (с ограничениями по датам события)
   const { data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError } = useQuery({
-    queryKey: ['allDefensePlayers'],
-    queryFn: fetchAllDefensePlayers
+    queryKey: ['defensePlayers', dates],
+    queryFn: () => fetchDefensePlayers(dates!),
+    enabled: !!dates
   });
 
   // Загрузка игроков для атаки
-  const { data: attackPlayersData, isLoading: attackPlayersIsLoading } = useQuery({
-    queryKey: ['attackPlayers'],
-    queryFn: fetchAttackPlayers
+  const { data: attackPlayersData } = useQuery({
+    queryKey: ['attackPlayers', dates],
+    queryFn: () => fetchAttackPlayers(dates!),
+    enabled: !!dates
   });
 
   // Загрузка существующего расписания
@@ -222,8 +227,8 @@ const OrganizePlayers = () => {
       return;
     }
 
-    // Конвертируем всех игроков атаки в нужный формат для сохранения
-    const allAttackPlayers: IAttackPlayer[] = attackPlayersData?.map(player => ({
+    // Используем данные из состояния attackPlayers
+    const allAttackPlayers: IAttackPlayer[] = attackPlayers.map(player => ({
       id: player.id,
       name: player.name,
       alliance: player.alliance,
@@ -233,7 +238,7 @@ const OrganizePlayers = () => {
       troopFighter: player.troopFighter,
       troopShooter: player.troopShooter,
       troopRider: player.troopRider
-    })) || [];
+    }));
 
     try {
       if (existingSchedule) {
@@ -274,116 +279,346 @@ const OrganizePlayers = () => {
     return types;
   };
 
+  // Функция для получения типов войск игрока, которые совпадают с капитаном
+  const getMatchingTroopTypes = (player: Player, captain: Player) => {
+    const playerTypes: string[] = [];
+    const captainTypes: string[] = [];
+    
+    if (player.troopFighter) playerTypes.push('Fighter');
+    if (player.troopShooter) playerTypes.push('Shooter');
+    if (player.troopRider) playerTypes.push('Rider');
+    
+    if (captain.troopFighter) captainTypes.push('Fighter');
+    if (captain.troopShooter) captainTypes.push('Shooter');
+    if (captain.troopRider) captainTypes.push('Rider');
+    
+    // Возвращаем только те типы войск игрока, которые есть у капитана
+    return playerTypes.filter(type => captainTypes.includes(type));
+  };
+
+  // Функции пагинации
+  const getTotalPages = (totalItems: number) => {
+    return Math.ceil(totalItems / itemsPerPage);
+  };
+
+  const renderPagination = (totalItems: number, currentPage: number, onPageChange: (page: number) => void) => {
+    const totalPages = getTotalPages(totalItems);
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    pages.push(
+      <Pagination.Prev
+        key="prev"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      />
+    );
+
+    if (startPage > 1) {
+      pages.push(
+        <Pagination.Item key={1} onClick={() => onPageChange(1)}>
+          1
+        </Pagination.Item>
+      );
+      if (startPage > 2) {
+        pages.push(<Pagination.Ellipsis key="ellipsis1" />);
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <Pagination.Item
+          key={i}
+          active={i === currentPage}
+          onClick={() => onPageChange(i)}
+        >
+          {i}
+        </Pagination.Item>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<Pagination.Ellipsis key="ellipsis2" />);
+      }
+      pages.push(
+        <Pagination.Item key={totalPages} onClick={() => onPageChange(totalPages)}>
+          {totalPages}
+        </Pagination.Item>
+      );
+    }
+
+    pages.push(
+      <Pagination.Next
+        key="next"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      />
+    );
+
+    return <Pagination className="justify-content-center mt-3">{pages}</Pagination>;
+  };
+
   function printData(item: IBuildings, keyPostfix: string) {
     const totalUnits = item.players.reduce((acc, pl) => acc += pl.march, 0);
     const hasCaptain = item.capitan && item.capitan.id;
+    const totalPlayers = item.players.length;
+    const needsPagination = totalPlayers > itemsPerPage;
     
-    return (
-      <Card key={item.buildingName + keyPostfix} className={'mb-3'}>
-        <Card.Header>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h6>{item.buildingName}</h6>
-              {hasCaptain ? (
-                <div>
+    // Компонент для здания с пагинацией
+    const BuildingWithPagination: React.FC<{ building: IBuildings; keyPostfix: string }> = ({ building, keyPostfix }) => {
+      const [buildingPage, setBuildingPage] = useState(1);
+      const startIndex = (buildingPage - 1) * itemsPerPage;
+      const paginatedPlayers = building.players.slice(startIndex, startIndex + itemsPerPage);
+      
+      return (
+        <Card key={building.buildingName + keyPostfix} className={'mb-3'}>
+          <Card.Header>
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h6>{building.buildingName}</h6>
+                {hasCaptain ? (
                   <div>
-                    <strong>Captain:</strong> ({item.capitan.alliance}){item.capitan.name}
-                    <Badge bg="warning" className="ms-2">Rally: {item.rallySize}</Badge>
-                    <Badge bg="info" className="ms-2">March: {item.capitan.marchSize}</Badge>
+                    <div>
+                      <strong>Captain:</strong> ({building.capitan.alliance}){building.capitan.name}
+                      <Badge bg="warning" className="ms-2">Rally: {building.rallySize}</Badge>
+                      <Badge bg="info" className="ms-2">March: {building.capitan.marchSize}</Badge>
+                    </div>
+                    <div className="mt-1">
+                      <small className="text-muted">
+                        <strong>Captain Troop Types:</strong> {getCaptainTroopTypes(building.capitan).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        ))}
+                        <Badge bg="secondary" className="ms-2">Tier: {building.capitan.troopTier}</Badge>
+                      </small>
+                    </div>
                   </div>
-                  <div className="mt-1">
-                    <small className="text-muted">
-                      <strong>Captain Troop Types:</strong> {getCaptainTroopTypes(item.capitan).map(type => (
-                        <Badge key={type} bg="primary" className="me-1">
-                          {type}
-                        </Badge>
-                      ))}
-                      <Badge bg="secondary" className="ms-2">Tier: {item.capitan.troopTier}</Badge>
-                    </small>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-danger">Captain not assigned</div>
-              )}
+                ) : (
+                  <div className="text-danger">Captain not assigned</div>
+                )}
+              </div>
+              <div>
+                <Button 
+                  size="sm" 
+                  variant="outline-primary"
+                  onClick={() => handleEditBuilding(building)}
+                  className="me-2"
+                >
+                  Edit
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline-danger"
+                  onClick={() => handleClearBuilding(building)}
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
-            <div>
-              <Button 
-                size="sm" 
-                variant="outline-primary"
-                onClick={() => handleEditBuilding(item)}
-                className="me-2"
-              >
-                Edit
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline-danger"
-                onClick={() => handleClearBuilding(item)}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-        </Card.Header>
-        <Card.Body>
-          <Table striped size="sm">
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Troop Type</th>
-                <th>Tier</th>
-                <th>March</th>
-              </tr>
-            </thead>
-            <tbody>
-              {item.players.map(pl => (
-                <tr key={pl.player.id}>
-                  <td>({pl.player.alliance}){pl.player.name}</td>
-                  <td>
-                    {getTroopTypes(pl.player).map(type => (
-                      <Badge key={type} bg="primary" className="me-1">
-                        {type}
-                      </Badge>
-                    ))}
-                  </td>
-                  <td>
-                    <Badge bg="secondary">{pl.player.troopTier}</Badge>
-                  </td>
-                  <td>{pl.march}</td>
-                </tr>
-              ))}
-              {item.players.length === 0 && (
+            {needsPagination && (
+              <div className="mt-2">
+                <small className="text-muted">
+                  {totalPlayers} players - Page {buildingPage} of {getTotalPages(totalPlayers)}
+                </small>
+              </div>
+            )}
+          </Card.Header>
+          <Card.Body>
+            <Table striped size="sm">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="text-center text-muted">
-                    No players assigned
-                  </td>
+                  <th>Player</th>
+                  <th>Troop Type</th>
+                  <th>Tier</th>
+                  <th>March</th>
                 </tr>
-              )}
-            </tbody>
-          </Table>
-        </Card.Body>
-        <Card.Footer>
-          <div className="d-flex justify-content-between">
-            <div>
-              <strong>Rally Size:</strong> {item.rallySize}<br/>
-              <strong>Player Units:</strong> {totalUnits}<br/>
-              <strong>Difference:</strong> {item.rallySize - totalUnits}
+              </thead>
+              <tbody>
+                {paginatedPlayers.map(pl => (
+                  <tr key={pl.player.id}>
+                    <td>({pl.player.alliance}){pl.player.name}</td>
+                    <td>
+                      {building.capitan?.id ? 
+                        getMatchingTroopTypes(pl.player, building.capitan).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        )) :
+                        getTroopTypes(pl.player).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        ))
+                      }
+                    </td>
+                    <td>
+                      <Badge bg="secondary">{pl.player.troopTier}</Badge>
+                    </td>
+                    <td>{pl.march}</td>
+                  </tr>
+                ))}
+                {paginatedPlayers.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center text-muted">
+                      No players assigned
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+            {needsPagination && renderPagination(totalPlayers, buildingPage, setBuildingPage)}
+          </Card.Body>
+          <Card.Footer>
+            <div className="d-flex justify-content-between">
+              <div>
+                <strong>Rally Size:</strong> {building.rallySize}<br/>
+                <strong>Player Units:</strong> {totalUnits}<br/>
+                <strong>Difference:</strong> {building.rallySize - totalUnits}
+              </div>
+              <div>
+                {building.rallySize - totalUnits < 0 && (
+                  <Badge bg="danger">Overflow</Badge>
+                )}
+                {building.rallySize - totalUnits === 0 && (
+                  <Badge bg="success">Optimal</Badge>
+                )}
+                {building.rallySize - totalUnits > 0 && (
+                  <Badge bg="warning">Insufficient</Badge>
+                )}
+              </div>
             </div>
-            <div>
-              {item.rallySize - totalUnits < 0 && (
-                <Badge bg="danger">Overflow</Badge>
-              )}
-              {item.rallySize - totalUnits === 0 && (
-                <Badge bg="success">Optimal</Badge>
-              )}
-              {item.rallySize - totalUnits > 0 && (
-                <Badge bg="warning">Insufficient</Badge>
-              )}
+          </Card.Footer>
+        </Card>
+      );
+    };
+
+    if (!needsPagination) {
+      return (
+        <Card key={item.buildingName + keyPostfix} className={'mb-3'}>
+          <Card.Header>
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h6>{item.buildingName}</h6>
+                {hasCaptain ? (
+                  <div>
+                    <div>
+                      <strong>Captain:</strong> ({item.capitan.alliance}){item.capitan.name}
+                      <Badge bg="warning" className="ms-2">Rally: {item.rallySize}</Badge>
+                      <Badge bg="info" className="ms-2">March: {item.capitan.marchSize}</Badge>
+                    </div>
+                    <div className="mt-1">
+                      <small className="text-muted">
+                        <strong>Captain Troop Types:</strong> {getCaptainTroopTypes(item.capitan).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        ))}
+                        <Badge bg="secondary" className="ms-2">Tier: {item.capitan.troopTier}</Badge>
+                      </small>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-danger">Captain not assigned</div>
+                )}
+              </div>
+              <div>
+                <Button 
+                  size="sm" 
+                  variant="outline-primary"
+                  onClick={() => handleEditBuilding(item)}
+                  className="me-2"
+                >
+                  Edit
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline-danger"
+                  onClick={() => handleClearBuilding(item)}
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
-          </div>
-        </Card.Footer>
-      </Card>
-    );
+          </Card.Header>
+          <Card.Body>
+            <Table striped size="sm">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Troop Type</th>
+                  <th>Tier</th>
+                  <th>March</th>
+                </tr>
+              </thead>
+              <tbody>
+                {item.players.map(pl => (
+                  <tr key={pl.player.id}>
+                    <td>({pl.player.alliance}){pl.player.name}</td>
+                    <td>
+                      {item.capitan?.id ? 
+                        getMatchingTroopTypes(pl.player, item.capitan).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        )) :
+                        getTroopTypes(pl.player).map(type => (
+                          <Badge key={type} bg="primary" className="me-1">
+                            {type}
+                          </Badge>
+                        ))
+                      }
+                    </td>
+                    <td>
+                      <Badge bg="secondary">{pl.player.troopTier}</Badge>
+                    </td>
+                    <td>{pl.march}</td>
+                  </tr>
+                ))}
+                {item.players.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center text-muted">
+                      No players assigned
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </Card.Body>
+          <Card.Footer>
+            <div className="d-flex justify-content-between">
+              <div>
+                <strong>Rally Size:</strong> {item.rallySize}<br/>
+                <strong>Player Units:</strong> {totalUnits}<br/>
+                <strong>Difference:</strong> {item.rallySize - totalUnits}
+              </div>
+              <div>
+                {item.rallySize - totalUnits < 0 && (
+                  <Badge bg="danger">Overflow</Badge>
+                )}
+                {item.rallySize - totalUnits === 0 && (
+                  <Badge bg="success">Optimal</Badge>
+                )}
+                {item.rallySize - totalUnits > 0 && (
+                  <Badge bg="warning">Insufficient</Badge>
+                )}
+              </div>
+            </div>
+          </Card.Footer>
+        </Card>
+      );
+    }
+
+    return <BuildingWithPagination building={item} keyPostfix={keyPostfix} />;
   }
 
   if (playersIsLoading || datesIsLoading || scheduleIsLoading) {
@@ -458,7 +693,7 @@ const OrganizePlayers = () => {
           <PlayersStats 
             players={playersData} 
             buildings={buildings} 
-            attackPlayers={attackPlayersData?.map(player => ({
+            attackPlayers={attackPlayers.map(player => ({
               id: player.id,
               name: player.name,
               alliance: player.alliance,
@@ -468,7 +703,7 @@ const OrganizePlayers = () => {
               troopFighter: player.troopFighter,
               troopShooter: player.troopShooter,
               troopRider: player.troopRider
-            })) || []} 
+            }))} 
           />
         </div>
       )}

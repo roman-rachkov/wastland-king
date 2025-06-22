@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, addDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, query, where, addDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { ISchedule, IBuildings, IAttackPlayer } from '../types/Buildings';
 import { Player } from '../types/Player';
@@ -104,12 +104,26 @@ export const fetchAllDefensePlayers = async (): Promise<Player[]> => {
   })) as Player[];
 };
 
-// Получить игроков для атаки
-export const fetchAttackPlayers = async (): Promise<Player[]> => {
-  const q = query(
-    collection(db, 'players'),
-    where('isAttack', '==', true) // Только игроки для атаки
-  );
+// Получить игроков для атаки с ограничениями по датам события
+export const fetchAttackPlayers = async (dates?: { lastDate: Date; nextDate: Date }): Promise<Player[]> => {
+  const { DateTime } = await import('luxon');
+  
+  let q;
+  if (dates) {
+    // С ограничениями по датам
+    q = query(
+      collection(db, 'players'),
+      where('updatedAt', '>=', DateTime.fromJSDate(dates.lastDate).plus({hours: 36}).toJSDate()),
+      where('updatedAt', '<=', DateTime.fromJSDate(dates.nextDate).minus({hours: 36}).toJSDate()),
+      where('isAttack', '==', true) // Только игроки для атаки
+    );
+  } else {
+    // Без ограничений по датам (для обратной совместимости)
+    q = query(
+      collection(db, 'players'),
+      where('isAttack', '==', true) // Только игроки для атаки
+    );
+  }
   
   const querySnapshot = await getDocs(q);
   const attackPlayers = querySnapshot.docs.map(doc => ({
