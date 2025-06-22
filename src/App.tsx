@@ -1,7 +1,6 @@
 import {Container, Row} from "react-bootstrap";
 import HeaderBanner from "./Components/HeaderBaner";
 import RegistrationForm from "./pages/RegistrationForm";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {BrowserRouter, Route, Routes} from "react-router";
 import AdminMain from "./pages/admin/Main";
@@ -17,47 +16,36 @@ import Login from "./pages/admin/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminUsers from "./pages/admin/Settings/AdminUsers";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 минут
-    },
-  },
-});
-
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Container className={'position-relative min-vh-100 h-100 d-flex flex-column'}>
-        <HeaderBanner/>
-        <BrowserRouter>
-          <Routes>
-            <Route path={'/'} element={<PublicLayout/>}>
-              <Route index element={<RegistrationForm/>}/>
-              <Route path={'players'} element={<PlayersList/>}/>
-              <Route path={'schedule'} element={<SchedulePage/>}/>
+    <Container className={'position-relative min-vh-100 h-100 d-flex flex-column'}>
+      <HeaderBanner/>
+      <BrowserRouter>
+        <Routes>
+          <Route path={'/'} element={<PublicLayout/>}>
+            <Route index element={<RegistrationForm/>}/>
+            <Route path={'players'} element={<PlayersList/>}/>
+            <Route path={'schedule'} element={<SchedulePage/>}/>
+          </Route>
+          <Route path={'thanks'} element={<ThanksPage/>}/>
+          <Route path={'admin'}>
+            <Route path={'login'} element={<Login/>}/>
+            <Route element={<ProtectedRoute><AdminLayout/></ProtectedRoute>}>
+              <Route index element={<AdminMain/>}/>
+              <Route path={'settings'} element={<Settings/>}/>
+              <Route path={'admin-users'} element={<AdminUsers/>}/>
+              <Route path={'organize-players'} element={<OrganizePlayers/>}/>
             </Route>
-            <Route path={'thanks'} element={<ThanksPage/>}/>
-            <Route path={'admin'}>
-              <Route path={'login'} element={<Login/>}/>
-              <Route element={<ProtectedRoute><AdminLayout/></ProtectedRoute>}>
-                <Route index element={<AdminMain/>}/>
-                <Route path={'settings'} element={<Settings/>}/>
-                <Route path={'admin-users'} element={<AdminUsers/>}/>
-                <Route path={'organize-players'} element={<OrganizePlayers/>}/>
-              </Route>
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        <Row className="footer sticky-bottom">
-          <div className="transtale">
-            <GoogleTranslate/>
-          </div>
-          <ReactQueryDevtools initialIsOpen={false}/>
-        </Row>
-      </Container>
-    </QueryClientProvider>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+      <Row className="footer sticky-bottom">
+        <div className="transtale">
+          <GoogleTranslate/>
+        </div>
+        <ReactQueryDevtools initialIsOpen={false}/>
+      </Row>
+    </Container>
   )
 }
 
