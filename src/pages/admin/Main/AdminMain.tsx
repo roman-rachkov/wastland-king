@@ -133,15 +133,26 @@ function AdminMain() {
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const queryClient = useQueryClient();
 
+  // Отслеживаем монтирование компонента
+  useEffect(() => {
+    setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
+
   const handleEditPlayer = useCallback((player: Player) => {
+    if (!isMounted) return;
     console.log('AdminMain: handleEditPlayer called for player:', player.name);
     setSelectedPlayer(player);
     setShowEditModal(true);
-  }, []);
+  }, [isMounted]);
 
   const handleDeletePlayer = useCallback(async (player: Player) => {
+    if (!isMounted) return;
     if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
       try {
         await deletePlayer(player.id);
@@ -153,7 +164,12 @@ function AdminMain() {
         alert('Failed to delete player. Please try again.');
       }
     }
-  }, [queryClient, showAllPlayers]);
+  }, [queryClient, showAllPlayers, isMounted]);
+
+  const handleShowAllPlayersChange = useCallback((checked: boolean) => {
+    if (!isMounted) return;
+    setShowAllPlayers(checked);
+  }, [isMounted]);
 
   const columns: ColumnDef<Player>[] = [
     {
@@ -281,6 +297,8 @@ function AdminMain() {
     queryFn: fetchWastelandDates,
     staleTime: 5 * 60 * 1000, // 5 минут
     gcTime: 10 * 60 * 1000, // 10 минут
+    retry: 3,
+    retryDelay: 1000,
   });
   
   const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
@@ -289,10 +307,15 @@ function AdminMain() {
     enabled: !!dates || showAllPlayers,
     staleTime: 2 * 60 * 1000, // 2 минуты
     gcTime: 5 * 60 * 1000, // 5 минут
+    retry: 3,
+    retryDelay: 1000,
   });
 
+  // Проверяем, что компонент все еще смонтирован перед рендерингом таблицы
+  const safePlayersData = isMounted ? (playersData || []) : [];
+
   const table = useReactTable({
-    data: playersData || [],
+    data: safePlayersData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -318,6 +341,8 @@ function AdminMain() {
   });
 
   const handleExport = () => {
+    if (!isMounted) return;
+    
     // Создаем новый рабочий лист
     const worksheet = XLSX.utils.json_to_sheet(
       table.getPrePaginationRowModel().rows.map(({original: item}) => ({
@@ -351,10 +376,11 @@ function AdminMain() {
   };
 
   const handlePlayerUpdated = () => {
+    if (!isMounted) return;
     queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
   };
 
-  if (datesIsloading || playersIsLoading) return <div>Loading...</div>;
+  if (datesIsloading || playersIsLoading || !isMounted) return <div>Loading...</div>;
   if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
   if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
   return (
@@ -368,7 +394,7 @@ function AdminMain() {
               id="show-all-players"
               label="Show all registered players"
               checked={showAllPlayers}
-              onChange={(e) => setShowAllPlayers(e.target.checked)}
+              onChange={(e) => handleShowAllPlayersChange(e.target.checked)}
             />
             <ColumnVisibilityToggle
               columns={table.getAllLeafColumns()}
@@ -501,10 +527,12 @@ function AdminMain() {
       </Card>
 
       <EditPlayerModal
-        show={showEditModal}
+        show={showEditModal && isMounted}
         onHide={() => {
-          setShowEditModal(false);
-          setSelectedPlayer(null);
+          if (isMounted) {
+            setShowEditModal(false);
+            setSelectedPlayer(null);
+          }
         }}
         player={selectedPlayer}
         onPlayerUpdated={handlePlayerUpdated}
