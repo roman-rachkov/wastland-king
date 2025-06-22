@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, Row, Col, Table, Button, Alert, Badge, Form, ListGroup, Nav, Tab, Dropdown, Pagination } from 'react-bootstrap';
-import { fetchScheduleByEventDate, fetchSchedules, fetchDefensePlayers } from '../../api/scheduleApi';
+import { fetchScheduleByEventDate, fetchSchedules, fetchDefensePlayers, fetchAttackPlayers } from '../../api/scheduleApi';
 import { fetchWastelandDates } from '../../api/fetchWastelandDates';
 import { IBuildings, Shift, ISchedule, IAttackPlayer } from '../../types/Buildings';
 import { Player } from '../../types/Player';
@@ -55,6 +55,13 @@ const SchedulePage = () => {
     enabled: !!dates
   });
 
+  // Загрузка игроков атаки для поиска (с ограничениями по датам события)
+  const { data: attackPlayers, isLoading: attackPlayersIsLoading } = useQuery({
+    queryKey: ['attackPlayers', dates],
+    queryFn: () => fetchAttackPlayers(dates!),
+    enabled: !!dates
+  });
+
   // Установка текущего расписания при загрузке
   useEffect(() => {
     if (currentSchedule) {
@@ -86,12 +93,12 @@ const SchedulePage = () => {
       return;
     }
 
-    if (!allPlayers) return;
+    if (!allPlayers || !attackPlayers) return;
 
     // Ищем среди всех игроков (защита + атака)
-    const allAvailablePlayers = [...allPlayers];
+    const allAvailablePlayers = [...allPlayers, ...attackPlayers];
     
-    // Добавляем игроков атаки из текущего расписания
+    // Добавляем игроков атаки из текущего расписания (если их нет в загруженных)
     if (selectedSchedule?.attackPlayers) {
       selectedSchedule.attackPlayers.forEach(attackPlayer => {
         // Проверяем, нет ли уже такого игрока в списке
@@ -135,12 +142,12 @@ const SchedulePage = () => {
     setSearchPerformed(true);
     setPlayerNotFound(false);
     
-    if (!allPlayers) return;
+    if (!allPlayers || !attackPlayers) return;
 
     // Ищем точное совпадение
-    const allAvailablePlayers = [...allPlayers];
+    const allAvailablePlayers = [...allPlayers, ...attackPlayers];
     
-    // Добавляем игроков атаки
+    // Добавляем игроков атаки из расписания (если их нет в загруженных)
     if (selectedSchedule?.attackPlayers) {
       selectedSchedule.attackPlayers.forEach(attackPlayer => {
         const exists = allAvailablePlayers.some(p => p.id === attackPlayer.id);
@@ -772,7 +779,7 @@ const SchedulePage = () => {
     return <Pagination className="justify-content-center mt-3">{pages}</Pagination>;
   };
 
-  if (datesIsLoading || scheduleIsLoading || playersIsLoading) {
+  if (datesIsLoading || scheduleIsLoading || playersIsLoading || attackPlayersIsLoading) {
     return <div className="text-center p-4">Loading...</div>;
   }
 
