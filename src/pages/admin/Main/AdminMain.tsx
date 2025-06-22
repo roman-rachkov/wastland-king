@@ -134,13 +134,27 @@ function AdminMain() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
 
   // Отслеживаем монтирование компонента
   useEffect(() => {
     setIsMounted(true);
+    setIsLoading(false);
     return () => {
       setIsMounted(false);
+    };
+  }, []);
+
+  // Дополнительная защита от ошибок DOM
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setIsMounted(false);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
@@ -168,7 +182,12 @@ function AdminMain() {
 
   const handleShowAllPlayersChange = useCallback((checked: boolean) => {
     if (!isMounted) return;
-    setShowAllPlayers(checked);
+    // Добавляем небольшую задержку для предотвращения race conditions
+    setTimeout(() => {
+      if (isMounted) {
+        setShowAllPlayers(checked);
+      }
+    }, 0);
   }, [isMounted]);
 
   const columns: ColumnDef<Player>[] = [
@@ -293,12 +312,14 @@ function AdminMain() {
   ];
 
   const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
-    queryKey: ['wastelandDates'],
+    queryKey: ['wastlandDates'],
     queryFn: fetchWastelandDates,
     staleTime: 5 * 60 * 1000, // 5 минут
     gcTime: 10 * 60 * 1000, // 10 минут
     retry: 3,
     retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
   
   const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
@@ -309,6 +330,8 @@ function AdminMain() {
     gcTime: 5 * 60 * 1000, // 5 минут
     retry: 3,
     retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Проверяем, что компонент все еще смонтирован перед рендерингом таблицы
@@ -343,46 +366,61 @@ function AdminMain() {
   const handleExport = () => {
     if (!isMounted) return;
     
-    // Создаем новый рабочий лист
-    const worksheet = XLSX.utils.json_to_sheet(
-      table.getPrePaginationRowModel().rows.map(({original: item}) => ({
-        id: item.id,
-        name: item.name,
-        alliance: item.alliance,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-        firstShift: item.firstShift,
-        secondShift: item.secondShift,
-        troopTier: item.troopTier,
-        troopFighter: item.troopFighter,
-        troopShooter: item.troopShooter,
-        troopRider: item.troopRider,
-        isCapitan: item.isCapitan,
-        marchSize: item.marchSize,
-        rallySize: item.rallySize,
+    try {
+      // Создаем новый рабочий лист
+      const worksheet = XLSX.utils.json_to_sheet(
+        table.getPrePaginationRowModel().rows.map(({original: item}) => ({
+          id: item.id,
+          name: item.name,
+          alliance: item.alliance,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          firstShift: item.firstShift,
+          secondShift: item.secondShift,
+          troopTier: item.troopTier,
+          troopFighter: item.troopFighter,
+          troopShooter: item.troopShooter,
+          troopRider: item.troopRider,
+          isCapitan: item.isCapitan,
+          marchSize: item.marchSize,
+          rallySize: item.rallySize,
 
-      }))
-    );
+        }))
+      );
 
-    // Создаем рабочую книгу и добавляем лист
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, showAllPlayers ? 'all_players' : 'current_players');
+      // Создаем рабочую книгу и добавляем лист
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, showAllPlayers ? 'all_players' : 'current_players');
 
-    // Сохраняем файл напрямую через SheetJS
-    XLSX.writeFile(workbook, `${showAllPlayers ? 'all_players' : 'current_players'}_export.xlsx`, {
-      bookType: 'xlsx',
-      type: 'array',
-    });
+      // Сохраняем файл напрямую через SheetJS
+      XLSX.writeFile(workbook, `${showAllPlayers ? 'all_players' : 'current_players'}_export.xlsx`, {
+        bookType: 'xlsx',
+        type: 'array',
+      });
+    } catch (error) {
+      console.error('Error during export:', error);
+      alert('Failed to export data. Please try again.');
+    }
   };
 
   const handlePlayerUpdated = () => {
     if (!isMounted) return;
-    queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+    // Добавляем небольшую задержку для предотвращения race conditions
+    setTimeout(() => {
+      if (isMounted) {
+        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+      }
+    }, 0);
   };
 
-  if (datesIsloading || playersIsLoading || !isMounted) return <div>Loading...</div>;
+  if (datesIsloading || playersIsLoading || !isMounted || isLoading) return <div>Loading...</div>;
   if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
   if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
+  
+  // Дополнительная проверка на случай, если данные еще не загружены
+  if (!safePlayersData || safePlayersData.length === 0) {
+    return <div>No players data available</div>;
+  }
   return (
     <>
       <Card>
@@ -530,8 +568,13 @@ function AdminMain() {
         show={showEditModal && isMounted}
         onHide={() => {
           if (isMounted) {
-            setShowEditModal(false);
-            setSelectedPlayer(null);
+            // Добавляем небольшую задержку для предотвращения race conditions
+            setTimeout(() => {
+              if (isMounted) {
+                setShowEditModal(false);
+                setSelectedPlayer(null);
+              }
+            }, 0);
           }
         }}
         player={selectedPlayer}
