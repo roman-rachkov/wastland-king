@@ -76,3 +76,354 @@
 #     imageUrl
 #   }
 # }
+
+# Запросы для форума
+
+# Пользователи
+query GetUser($id: String!) {
+  user(id: $id) {
+    id
+    username
+    email
+    avatar
+    createdAt
+    updatedAt
+    isActive
+    lastSeen
+    userRoles {
+      role {
+        id
+        name
+        description
+        permissions
+      }
+      assignedAt
+      assignedBy
+    }
+    userGroups {
+      group {
+        id
+        name
+        description
+        color
+        permissions
+      }
+      joinedAt
+      invitedBy
+    }
+  }
+}
+
+query GetUsers {
+  users {
+    id
+    username
+    email
+    avatar
+    createdAt
+    updatedAt
+    isActive
+    lastSeen
+  }
+}
+
+# Роли
+query GetRoles {
+  roles {
+    id
+    name
+    description
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+query GetRole($id: String!) {
+  role(id: $id) {
+    id
+    name
+    description
+    permissions
+    createdAt
+    updatedAt
+    userRoles {
+      user {
+        id
+        username
+        email
+      }
+      assignedAt
+      assignedBy
+    }
+  }
+}
+
+# Группы
+query GetGroups {
+  groups {
+    id
+    name
+    description
+    color
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+query GetGroup($id: String!) {
+  group(id: $id) {
+    id
+    name
+    description
+    color
+    permissions
+    createdAt
+    updatedAt
+    userGroups {
+      user {
+        id
+        username
+        email
+      }
+      joinedAt
+      invitedBy
+    }
+  }
+}
+
+# Разделы форума
+query GetForumSections {
+  forumSections(orderBy: { order: ASC }) {
+    id
+    name
+    description
+    order
+    isActive
+    createdAt
+    updatedAt
+    readPermissions
+    writePermissions
+    topics {
+      id
+      title
+      createdAt
+      updatedAt
+      lastPostAt
+      views
+      isSticky
+      isLocked
+      isActive
+      author {
+        id
+        username
+        avatar
+      }
+      posts {
+        id
+        createdAt
+        author {
+          id
+          username
+        }
+      }
+    }
+  }
+}
+
+query GetForumSection($id: String!) {
+  forumSection(id: $id) {
+    id
+    name
+    description
+    order
+    isActive
+    createdAt
+    updatedAt
+    readPermissions
+    writePermissions
+    topics {
+      id
+      title
+      content
+      createdAt
+      updatedAt
+      lastPostAt
+      views
+      isSticky
+      isLocked
+      isActive
+      author {
+        id
+        username
+        avatar
+      }
+      posts {
+        id
+        content
+        createdAt
+        updatedAt
+        isEdited
+        editedBy
+        editedAt
+        editReason
+        author {
+          id
+          username
+          avatar
+        }
+      }
+    }
+  }
+}
+
+# Темы
+query GetTopics($sectionId: String!) {
+  topics(where: { section: { id: { eq: $sectionId } } }, orderBy: { isSticky: DESC, lastPostAt: DESC }) {
+    id
+    title
+    content
+    createdAt
+    updatedAt
+    lastPostAt
+    views
+    isSticky
+    isLocked
+    isActive
+    author {
+      id
+      username
+      avatar
+    }
+    section {
+      id
+      name
+    }
+    posts {
+      id
+      createdAt
+      author {
+        id
+        username
+      }
+    }
+  }
+}
+
+query GetTopic($id: String!) {
+  topic(id: $id) {
+    id
+    title
+    content
+    createdAt
+    updatedAt
+    lastPostAt
+    views
+    isSticky
+    isLocked
+    isActive
+    author {
+      id
+      username
+      avatar
+    }
+    section {
+      id
+      name
+      description
+    }
+    posts(orderBy: { createdAt: ASC }) {
+      id
+      content
+      createdAt
+      updatedAt
+      isEdited
+      editedBy
+      editedAt
+      editReason
+      author {
+        id
+        username
+        avatar
+      }
+    }
+  }
+}
+
+# Сообщения
+query GetPosts($topicId: String!) {
+  posts(where: { topic: { id: { eq: $topicId } } }, orderBy: { createdAt: ASC }) {
+    id
+    content
+    createdAt
+    updatedAt
+    isEdited
+    editedBy
+    editedAt
+    editReason
+    author {
+      id
+      username
+      avatar
+    }
+    topic {
+      id
+      title
+    }
+  }
+}
+
+query GetPost($id: String!) {
+  post(id: $id) {
+    id
+    content
+    createdAt
+    updatedAt
+    isEdited
+    editedBy
+    editedAt
+    editReason
+    author {
+      id
+      username
+      avatar
+    }
+    topic {
+      id
+      title
+      section {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Загруженные изображения
+query GetImageUploads($userId: String!) {
+  imageUploads(where: { uploadedBy: { eq: $userId } }, orderBy: { uploadedAt: DESC }) {
+    id
+    filename
+    originalName
+    mimeType
+    size
+    url
+    uploadedBy
+    uploadedAt
+    isActive
+  }
+}
+
+# Логи действий
+query GetUserActionLogs($userId: String!, $limit: Int = 50) {
+  userActionLogs(where: { user: { eq: $userId } }, orderBy: { createdAt: DESC }, limit: $limit) {
+    id
+    user
+    action
+    ipAddress
+    userAgent
+    createdAt
+    metadata
+  }
+}

@@ -15,6 +15,9 @@ import PlayersList from "./pages/PlayersList";
 import Login from "./pages/admin/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminUsers from "./pages/admin/Settings/AdminUsers";
+import ForumAuth from "./pages/ForumAuth";
+import Forum from "./pages/Forum";
+import PublicNavbar from "./Components/PublicNavbar";
 
 function App() {
   return (
@@ -27,7 +30,38 @@ function App() {
             <Route path={'players'} element={<PlayersList/>}/>
             <Route path={'schedule'} element={<SchedulePage/>}/>
           </Route>
-          <Route path={'thanks'} element={<ThanksPage/>}/>
+          
+          {/* Страницы с навбаром, но без PublicLayout */}
+          <Route path={'thanks'} element={
+            <>
+              <PublicNavbar />
+              <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                <ThanksPage/>
+              </Container>
+            </>
+          }/>
+          
+          {/* Форум */}
+          <Route path={'forum'}>
+            <Route path={'auth'} element={
+              <>
+                <PublicNavbar />
+                <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                  <ForumAuth/>
+                </Container>
+              </>
+            }/>
+            <Route index element={
+              <>
+                <PublicNavbar />
+                <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                  <Forum/>
+                </Container>
+              </>
+            }/>
+            {/* TODO: Добавить маршруты для разделов, тем и сообщений */}
+          </Route>
+          
           <Route path={'admin'}>
             <Route path={'login'} element={<Login/>}/>
             <Route element={<ProtectedRoute><AdminLayout/></ProtectedRoute>}>

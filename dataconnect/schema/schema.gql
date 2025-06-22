@@ -50,3 +50,137 @@
 #   reviewText: String
 #   reviewDate: Date! @default(expr: "request.time")
 # }
+
+# Схема для форума Wasteland
+
+# Пользователь - привязан к Firebase Auth UID
+type User @table {
+  id: String! @default(expr: "auth.uid")
+  username: String! @col(dataType: "varchar(50)")
+  email: String! @col(dataType: "varchar(100)")
+  avatar: String
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  isActive: Boolean! @default(expr: "true")
+  lastSeen: Date
+  # Связи
+  posts: [Post!]!
+  topics: [Topic!]!
+  userRoles: [UserRole!]!
+  userGroups: [UserGroup!]!
+}
+
+# Роли пользователей
+type Role @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String! @col(dataType: "varchar(50)")
+  description: String
+  permissions: [String!]! # JSON массив разрешений
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  # Связи
+  userRoles: [UserRole!]!
+}
+
+# Связь пользователей с ролями
+type UserRole @table(key: ["user", "role"]) {
+  user: User!
+  role: Role!
+  assignedAt: Date! @default(expr: "request.time")
+  assignedBy: String! # UID администратора
+}
+
+# Группы пользователей
+type Group @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String! @col(dataType: "varchar(100)")
+  description: String
+  color: String @col(dataType: "varchar(7)") # HEX цвет
+  permissions: [String!]! # JSON массив разрешений
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  # Связи
+  userGroups: [UserGroup!]!
+}
+
+# Связь пользователей с группами
+type UserGroup @table(key: ["user", "group"]) {
+  user: User!
+  group: Group!
+  joinedAt: Date! @default(expr: "request.time")
+  invitedBy: String! # UID пригласившего
+}
+
+# Разделы форума
+type ForumSection @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String! @col(dataType: "varchar(100)")
+  description: String
+  order: Int! @default(expr: "0")
+  isActive: Boolean! @default(expr: "true")
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  # Права доступа
+  readPermissions: [String!]! # JSON массив ролей/групп
+  writePermissions: [String!]! # JSON массив ролей/групп
+  # Связи
+  topics: [Topic!]!
+}
+
+# Темы форума
+type Topic @table {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String! @col(dataType: "varchar(200)")
+  content: String! # HTML контент
+  section: ForumSection!
+  author: User!
+  isSticky: Boolean! @default(expr: "false")
+  isLocked: Boolean! @default(expr: "false")
+  isActive: Boolean! @default(expr: "true")
+  views: Int! @default(expr: "0")
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  lastPostAt: Date
+  # Связи
+  posts: [Post!]!
+}
+
+# Сообщения в темах
+type Post @table {
+  id: UUID! @default(expr: "uuidV4()")
+  content: String! # HTML контент
+  topic: Topic!
+  author: User!
+  isActive: Boolean! @default(expr: "true")
+  createdAt: Date! @default(expr: "request.time")
+  updatedAt: Date! @default(expr: "request.time")
+  # Модерация
+  isEdited: Boolean! @default(expr: "false")
+  editedBy: String # UID модератора
+  editedAt: Date
+  editReason: String
+}
+
+# Загруженные изображения
+type ImageUpload @table {
+  id: UUID! @default(expr: "uuidV4()")
+  filename: String! @col(dataType: "varchar(255)")
+  originalName: String! @col(dataType: "varchar(255)")
+  mimeType: String! @col(dataType: "varchar(100)")
+  size: Int!
+  url: String! @col(dataType: "text")
+  uploadedBy: String! # UID пользователя
+  uploadedAt: Date! @default(expr: "request.time")
+  isActive: Boolean! @default(expr: "true")
+}
+
+# Логи действий пользователей (для антиспама)
+type UserActionLog @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: String! # UID пользователя
+  action: String! @col(dataType: "varchar(50)") # post, topic, login, etc.
+  ipAddress: String @col(dataType: "varchar(45)")
+  userAgent: String
+  createdAt: Date! @default(expr: "request.time")
+  metadata: String # JSON дополнительные данные
+}

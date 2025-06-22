@@ -31,3 +31,339 @@
 #   # The "auth.uid" server value ensures that users can only delete their own reviews.
 #   review_delete(key: { userId_expr: "auth.uid", movieId: $movieId })
 # }
+
+# Мутации для форума
+
+# Пользователи
+mutation CreateUser($input: UserInput!) {
+  insertUser(input: $input) {
+    id
+    username
+    email
+    avatar
+    createdAt
+    updatedAt
+    isActive
+  }
+}
+
+mutation UpdateUser($id: String!, $input: UserInput!) {
+  updateUser(id: $id, input: $input) {
+    id
+    username
+    email
+    avatar
+    createdAt
+    updatedAt
+    isActive
+    lastSeen
+  }
+}
+
+mutation DeleteUser($id: String!) {
+  deleteUser(id: $id) {
+    id
+  }
+}
+
+# Роли
+mutation CreateRole($input: RoleInput!) {
+  insertRole(input: $input) {
+    id
+    name
+    description
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+mutation UpdateRole($id: String!, $input: RoleInput!) {
+  updateRole(id: $id, input: $input) {
+    id
+    name
+    description
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+mutation DeleteRole($id: String!) {
+  deleteRole(id: $id) {
+    id
+  }
+}
+
+# Связь пользователей с ролями
+mutation AssignRoleToUser($input: UserRoleInput!) {
+  insertUserRole(input: $input) {
+    user {
+      id
+      username
+    }
+    role {
+      id
+      name
+    }
+    assignedAt
+    assignedBy
+  }
+}
+
+mutation RemoveRoleFromUser($userId: String!, $roleId: String!) {
+  deleteUserRole(userId: $userId, roleId: $roleId) {
+    user {
+      id
+    }
+    role {
+      id
+    }
+  }
+}
+
+# Группы
+mutation CreateGroup($input: GroupInput!) {
+  insertGroup(input: $input) {
+    id
+    name
+    description
+    color
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+mutation UpdateGroup($id: String!, $input: GroupInput!) {
+  updateGroup(id: $id, input: $input) {
+    id
+    name
+    description
+    color
+    permissions
+    createdAt
+    updatedAt
+  }
+}
+
+mutation DeleteGroup($id: String!) {
+  deleteGroup(id: $id) {
+    id
+  }
+}
+
+# Связь пользователей с группами
+mutation AddUserToGroup($input: UserGroupInput!) {
+  insertUserGroup(input: $input) {
+    user {
+      id
+      username
+    }
+    group {
+      id
+      name
+    }
+    joinedAt
+    invitedBy
+  }
+}
+
+mutation RemoveUserFromGroup($userId: String!, $groupId: String!) {
+  deleteUserGroup(userId: $userId, groupId: $groupId) {
+    user {
+      id
+    }
+    group {
+      id
+    }
+  }
+}
+
+# Разделы форума
+mutation CreateForumSection($input: ForumSectionInput!) {
+  insertForumSection(input: $input) {
+    id
+    name
+    description
+    order
+    isActive
+    createdAt
+    updatedAt
+    readPermissions
+    writePermissions
+  }
+}
+
+mutation UpdateForumSection($id: String!, $input: ForumSectionInput!) {
+  updateForumSection(id: $id, input: $input) {
+    id
+    name
+    description
+    order
+    isActive
+    createdAt
+    updatedAt
+    readPermissions
+    writePermissions
+  }
+}
+
+mutation DeleteForumSection($id: String!) {
+  deleteForumSection(id: $id) {
+    id
+  }
+}
+
+# Темы
+mutation CreateTopic($input: TopicInput!) {
+  insertTopic(input: $input) {
+    id
+    title
+    content
+    createdAt
+    updatedAt
+    isSticky
+    isLocked
+    isActive
+    views
+    author {
+      id
+      username
+      avatar
+    }
+    section {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdateTopic($id: String!, $input: TopicInput!) {
+  updateTopic(id: $id, input: $input) {
+    id
+    title
+    content
+    createdAt
+    updatedAt
+    isSticky
+    isLocked
+    isActive
+    views
+    author {
+      id
+      username
+      avatar
+    }
+    section {
+      id
+      name
+    }
+  }
+}
+
+mutation DeleteTopic($id: String!) {
+  deleteTopic(id: $id) {
+    id
+  }
+}
+
+mutation ToggleTopicSticky($id: String!, $isSticky: Boolean!) {
+  updateTopic(id: $id, input: { isSticky: $isSticky }) {
+    id
+    isSticky
+  }
+}
+
+mutation ToggleTopicLock($id: String!, $isLocked: Boolean!) {
+  updateTopic(id: $id, input: { isLocked: $isLocked }) {
+    id
+    isLocked
+  }
+}
+
+# Сообщения
+mutation CreatePost($input: PostInput!) {
+  insertPost(input: $input) {
+    id
+    content
+    createdAt
+    updatedAt
+    isEdited
+    author {
+      id
+      username
+      avatar
+    }
+    topic {
+      id
+      title
+      section {
+        id
+        name
+      }
+    }
+  }
+}
+
+mutation UpdatePost($id: String!, $input: PostInput!) {
+  updatePost(id: $id, input: $input) {
+    id
+    content
+    createdAt
+    updatedAt
+    isEdited
+    editedBy
+    editedAt
+    editReason
+    author {
+      id
+      username
+      avatar
+    }
+    topic {
+      id
+      title
+    }
+  }
+}
+
+mutation DeletePost($id: String!) {
+  deletePost(id: $id) {
+    id
+  }
+}
+
+# Загрузка изображений
+mutation CreateImageUpload($input: ImageUploadInput!) {
+  insertImageUpload(input: $input) {
+    id
+    filename
+    originalName
+    mimeType
+    size
+    url
+    uploadedBy
+    uploadedAt
+    isActive
+  }
+}
+
+mutation DeleteImageUpload($id: String!) {
+  deleteImageUpload(id: $id) {
+    id
+  }
+}
+
+# Логи действий
+mutation CreateUserActionLog($input: UserActionLogInput!) {
+  insertUserActionLog(input: $input) {
+    id
+    user
+    action
+    ipAddress
+    userAgent
+    createdAt
+    metadata
+  }
+}
