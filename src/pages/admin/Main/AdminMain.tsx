@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx';
 import {DateTime} from 'luxon';
 
 // 3. Создаем компонент таблицы
-import {useQuery} from '@tanstack/react-query';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {
   Column,
   ColumnDef,
@@ -17,12 +17,14 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table';
-import {Button, Card, Pagination, Table, Form} from "react-bootstrap";
+import {Button, Card, Pagination, Table, Form, ButtonGroup} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {fetchPlayers} from "../../../api/fetchPlayers.ts";
 import {fetchAllPlayers} from "../../../api/fetchAllPlayers.ts";
+import {deletePlayer} from "../../../api/deletePlayer.ts";
+import EditPlayerModal from "../../../Components/EditPlayerModal";
 
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
@@ -30,102 +32,6 @@ function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
 
 }
 
-const columns: ColumnDef<Player>[] = [
-  {
-    header: 'ID',
-    accessorKey: 'id',
-    id: 'id',
-    sortingFn: "text"
-    // sortDescFirst: false,
-  },
-  {
-    header: 'Created At',
-    accessorFn: row => DateTime.fromJSDate(row.createdAt).toFormat('dd.MM.yyyy HH:mm'),
-    sortingFn: "datetime",
-  },
-  {
-    header: 'Updated At',
-    accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
-    sortingFn: "datetime",
-  },
-  {
-    header: 'Name',
-    accessorKey: 'name',
-  }, {
-    header: 'Alliance',
-    accessorKey: 'alliance',
-  }, {
-    header: 'is Attack',
-    accessorKey: 'isAttack',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  },{
-    header: 'First shift',
-    accessorKey: 'firstShift',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'Second Shift',
-    accessorKey: 'secondShift',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'Troop tier',
-    accessorKey: 'troopTier',
-    filterFn: (row, columnId, filterValue) => row.getValue(columnId) === parseInt(filterValue),
-    meta: {
-      filterVariant: 'select',
-    },
-  }, {
-    header: 'Is Fighter',
-    accessorKey: 'troopFighter',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'Is Shooter',
-    accessorKey: 'troopShooter',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'Is Rider',
-    accessorKey: 'troopRider',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'Is Capitan',
-    accessorKey: 'isCapitan',
-    filterFn: booleanFilter,
-    meta: {
-      filterVariant: 'booleanSelect',
-    },
-  }, {
-    header: 'March size',
-    accessorKey: 'marchSize',
-    meta: {
-      filterVariant: 'range',
-    },
-  },
-  {
-    header: 'Rally size',
-    accessorKey: 'rallySize',
-    meta: {
-      filterVariant: 'range',
-    },
-  },
-
-];
 function Filter({ column }: { column: Column<any, unknown> }) {
   const columnFilterValue = column.getFilterValue()
   // @ts-ignore
@@ -223,6 +129,149 @@ function DebouncedInput({
 
 function AdminMain() {
   const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleEditPlayer = useCallback((player: Player) => {
+    setSelectedPlayer(player);
+    setShowEditModal(true);
+  }, []);
+
+  const handleDeletePlayer = useCallback(async (player: Player) => {
+    if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
+      try {
+        await deletePlayer(player.id);
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+        alert('Player deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        alert('Failed to delete player. Please try again.');
+      }
+    }
+  }, [queryClient, showAllPlayers]);
+
+  const columns: ColumnDef<Player>[] = [
+    {
+      header: 'ID',
+      accessorKey: 'id',
+      id: 'id',
+      sortingFn: "text"
+      // sortDescFirst: false,
+    },
+    {
+      header: 'Created At',
+      accessorFn: row => DateTime.fromJSDate(row.createdAt).toFormat('dd.MM.yyyy HH:mm'),
+      sortingFn: "datetime",
+    },
+    {
+      header: 'Updated At',
+      accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
+      sortingFn: "datetime",
+    },
+    {
+      header: 'Name',
+      accessorKey: 'name',
+    }, {
+      header: 'Alliance',
+      accessorKey: 'alliance',
+    }, {
+      header: 'is Attack',
+      accessorKey: 'isAttack',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    },{
+      header: 'First shift',
+      accessorKey: 'firstShift',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'Second Shift',
+      accessorKey: 'secondShift',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'Troop tier',
+      accessorKey: 'troopTier',
+      filterFn: (row, columnId, filterValue) => row.getValue(columnId) === parseInt(filterValue),
+      meta: {
+        filterVariant: 'select',
+      },
+    }, {
+      header: 'Is Fighter',
+      accessorKey: 'troopFighter',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'Is Shooter',
+      accessorKey: 'troopShooter',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'Is Rider',
+      accessorKey: 'troopRider',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'Is Capitan',
+      accessorKey: 'isCapitan',
+      filterFn: booleanFilter,
+      meta: {
+        filterVariant: 'booleanSelect',
+      },
+    }, {
+      header: 'March size',
+      accessorKey: 'marchSize',
+      meta: {
+        filterVariant: 'range',
+      },
+    },
+    {
+      header: 'Rally size',
+      accessorKey: 'rallySize',
+      meta: {
+        filterVariant: 'range',
+      },
+    },
+    {
+      header: 'Actions',
+      id: 'actions',
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <ButtonGroup size="sm">
+            <Button 
+              variant="outline-primary" 
+              size="sm"
+              onClick={() => handleEditPlayer(player)}
+            >
+              Edit
+            </Button>
+            <Button 
+              variant="outline-danger" 
+              size="sm"
+              onClick={() => handleDeletePlayer(player)}
+            >
+              Delete
+            </Button>
+          </ButtonGroup>
+        );
+      },
+    },
+  ];
 
   const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
     queryKey: ['wastelandDates'],
@@ -252,6 +301,7 @@ function AdminMain() {
       ],
     },
   });
+
   const handleExport = () => {
     // Создаем новый рабочий лист
     const worksheet = XLSX.utils.json_to_sheet(
@@ -285,123 +335,139 @@ function AdminMain() {
     });
   };
 
+  const handlePlayerUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+  };
+
   if (datesIsloading || playersIsLoading) return <div>Loading...</div>;
   if (datesIsError) return <div>Error loading dates: {datesError.message}</div>;
   if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
   return (
-    <Card>
-      <Card.Header className={'d-flex justify-content-between align-items-center'}>
-        <div className="d-flex align-items-center">
-          <h2 className="mb-0 me-3">List of players</h2>
-          <Form.Check
-            type="switch"
-            id="show-all-players"
-            label="Show all registered players"
-            checked={showAllPlayers}
-            onChange={(e) => setShowAllPlayers(e.target.checked)}
-          />
-        </div>
-        <Button onClick={handleExport}>
-          Download {showAllPlayers ? 'all players' : 'current players'} xlsx
-        </Button>
-      </Card.Header>
-      <Card.Body>
-        <Table responsive className="w-full border-collapse">
-          <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => {
-                return (
-                  <th key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder ? null : (
-                      <>
-                        <div
-                          {...{
-                            className: header.column.getCanSort()
-                              ? 'cursor-pointer select-none'
-                              : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {{
-                            asc: ' 🔼',
-                            desc: ' 🔽',
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
-                        {header.column.getCanFilter() ? (
-                          <div>
-                            <Filter column={header.column} />
+    <>
+      <Card>
+        <Card.Header className={'d-flex justify-content-between align-items-center'}>
+          <div className="d-flex align-items-center">
+            <h2 className="mb-0 me-3">List of players</h2>
+            <Form.Check
+              type="switch"
+              id="show-all-players"
+              label="Show all registered players"
+              checked={showAllPlayers}
+              onChange={(e) => setShowAllPlayers(e.target.checked)}
+            />
+          </div>
+          <Button onClick={handleExport}>
+            Download {showAllPlayers ? 'all players' : 'current players'} xlsx
+          </Button>
+        </Card.Header>
+        <Card.Body>
+          <Table responsive className="w-full border-collapse">
+            <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => {
+                  return (
+                    <th key={header.id} colSpan={header.colSpan}>
+                      {header.isPlaceholder ? null : (
+                        <>
+                          <div
+                            {...{
+                              className: header.column.getCanSort()
+                                ? 'cursor-pointer select-none'
+                                : '',
+                              onClick: header.column.getToggleSortingHandler(),
+                            }}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {{
+                              asc: ' 🔼',
+                              desc: ' 🔽',
+                            }[header.column.getIsSorted() as string] ?? null}
                           </div>
-                        ) : null}
-                      </>
-                    )}
-                  </th>
-                )
-              })}
-            </tr>
-          ))}
-          </thead>
-          <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id} className="hover:bg-gray-50">
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="border-b p-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-          </tbody>
-        </Table>
-
-      </Card.Body>
-      <Card.Footer className={'d-flex justify-content-between'}>
-        <Pagination>
-          <Pagination.Item
-            onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<<'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {'>'}
-          </Pagination.Item>
-          <Pagination.Item
-            onClick={() => table.lastPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {'>>'}
-          </Pagination.Item>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={e => {
-              table.setPageSize(Number(e.target.value))
-            }}
-          >
-            {[10, 20, 30, 40, 50].map(pageSize => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>
+                          {header.column.getCanFilter() ? (
+                            <div>
+                              <Filter column={header.column} />
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </th>
+                  )
+                })}
+              </tr>
             ))}
-          </select>
-        </Pagination>
-        <div className={'ms-3 me-auto fs-3'}>Total: {table.getRowCount()}</div>
-        <Button variant={'secondary'} onClick={() => table.resetColumnFilters(true)}>Clear filters</Button>
-      </Card.Footer>
-    </Card>
+            </thead>
+            <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id} className="border-b p-2">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            </tbody>
+          </Table>
+
+        </Card.Body>
+        <Card.Footer className={'d-flex justify-content-between'}>
+          <Pagination>
+            <Pagination.Item
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {'<<'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {'<'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              {'>'}
+            </Pagination.Item>
+            <Pagination.Item
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              {'>>'}
+            </Pagination.Item>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={e => {
+                table.setPageSize(Number(e.target.value))
+              }}
+            >
+              {[10, 20, 30, 40, 50].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
+          </Pagination>
+          <div className={'ms-3 me-auto fs-3'}>Total: {table.getRowCount()}</div>
+          <Button variant={'secondary'} onClick={() => table.resetColumnFilters(true)}>Clear filters</Button>
+        </Card.Footer>
+      </Card>
+
+      <EditPlayerModal
+        show={showEditModal}
+        onHide={() => {
+          setShowEditModal(false);
+          setSelectedPlayer(null);
+        }}
+        player={selectedPlayer}
+        onPlayerUpdated={handlePlayerUpdated}
+      />
+    </>
   );
 }
 
