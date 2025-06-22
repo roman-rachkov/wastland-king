@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWastelandDates } from "../../../api/fetchWastelandDates.ts";
-import { fetchAllDefensePlayers } from "../../../api/scheduleApi.ts";
+import { fetchAllDefensePlayers, fetchAttackPlayers } from "../../../api/scheduleApi.ts";
 import { fetchScheduleByEventDate, saveSchedule, updateSchedule } from "../../../api/scheduleApi.ts";
 import { Card, Col, Row, Table, Button, Alert, Badge, Modal, Form } from "react-bootstrap";
 import { allocatePlayersToBuildings } from "./utils.tsx";
-import { IBuildings, Shift, ISchedule, TBuildingName } from "../../../types/Buildings.tsx";
+import { IBuildings, Shift, ISchedule, TBuildingName, IAttackPlayer } from "../../../types/Buildings.tsx";
 import { Player } from "../../../types/Player.ts";
 import EditBuildingModal from "../../../Components/EditBuildingModal";
 import AvailablePlayersList from "../../../Components/AvailablePlayersList";
@@ -17,9 +17,9 @@ const OrganizePlayers = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<IBuildings | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [scheduleName, setScheduleName] = useState('');
   const [showPlayersList, setShowPlayersList] = useState(false);
   const [showStats, setShowStats] = useState(true);
+  const [saveNotification, setSaveNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -35,6 +35,12 @@ const OrganizePlayers = () => {
     queryFn: fetchAllDefensePlayers
   });
 
+  // Загрузка игроков для атаки
+  const { data: attackPlayersData, isLoading: attackPlayersIsLoading } = useQuery({
+    queryKey: ['attackPlayers'],
+    queryFn: fetchAttackPlayers
+  });
+
   // Загрузка существующего расписания
   const { data: existingSchedule, isLoading: scheduleIsLoading } = useQuery({
     queryKey: ['schedule', dates?.nextDate],
@@ -48,16 +54,25 @@ const OrganizePlayers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       setShowSaveModal(false);
-      setScheduleName('');
+      setSaveNotification({ type: 'success', message: 'Schedule saved successfully!' });
+      setTimeout(() => setSaveNotification(null), 3000);
+    },
+    onError: (error) => {
+      setSaveNotification({ type: 'error', message: `Error saving schedule: ${error.message}` });
     }
   });
 
   // Мутация для обновления расписания
   const updateScheduleMutation = useMutation({
-    mutationFn: ({ scheduleId, buildings }: { scheduleId: string; buildings: IBuildings[] }) => 
-      updateSchedule(scheduleId, buildings),
+    mutationFn: ({ scheduleId, buildings, attackPlayers }: { scheduleId: string; buildings: IBuildings[]; attackPlayers: IAttackPlayer[] }) => 
+      updateSchedule(scheduleId, buildings, attackPlayers),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      setSaveNotification({ type: 'success', message: 'Schedule updated successfully!' });
+      setTimeout(() => setSaveNotification(null), 3000);
+    },
+    onError: (error) => {
+      setSaveNotification({ type: 'error', message: `Error updating schedule: ${error.message}` });
     }
   });
 
@@ -91,11 +106,50 @@ const OrganizePlayers = () => {
   }, [existingSchedule]);
 
   const [buildings, setBuildings] = useState<IBuildings[]>(initialData);
+  const [attackPlayers, setAttackPlayers] = useState<IAttackPlayer[]>([]);
 
   // Обновляем данные при изменении
   React.useEffect(() => {
     setBuildings(initialData);
-  }, [initialData]);
+    // Устанавливаем игроков атаки из существующего расписания или из загруженных данных
+    if (existingSchedule?.attackPlayers && existingSchedule.attackPlayers.length > 0) {
+      setAttackPlayers(existingSchedule.attackPlayers);
+    } else if (attackPlayersData && attackPlayersData.length > 0) {
+      // Конвертируем игроков атаки в нужный формат
+      const convertedAttackPlayers: IAttackPlayer[] = attackPlayersData.map(player => ({
+        id: player.id,
+        name: player.name,
+        alliance: player.alliance,
+        troopTier: player.troopTier,
+        marchSize: player.marchSize,
+        isCapitan: player.isCapitan,
+        troopFighter: player.troopFighter,
+        troopShooter: player.troopShooter,
+        troopRider: player.troopRider
+      }));
+      setAttackPlayers(convertedAttackPlayers);
+    } else {
+      setAttackPlayers([]);
+    }
+  }, [initialData, existingSchedule, attackPlayersData]);
+
+  // Отдельный useEffect для обновления attackPlayers при изменении attackPlayersData
+  React.useEffect(() => {
+    if (attackPlayersData && attackPlayersData.length > 0) {
+      const convertedAttackPlayers: IAttackPlayer[] = attackPlayersData.map(player => ({
+        id: player.id,
+        name: player.name,
+        alliance: player.alliance,
+        troopTier: player.troopTier,
+        marchSize: player.marchSize,
+        isCapitan: player.isCapitan,
+        troopFighter: player.troopFighter,
+        troopShooter: player.troopShooter,
+        troopRider: player.troopRider
+      }));
+      setAttackPlayers(convertedAttackPlayers);
+    }
+  }, [attackPlayersData]);
 
   const handleEditBuilding = (building: IBuildings) => {
     setSelectedBuilding(building);
@@ -117,28 +171,90 @@ const OrganizePlayers = () => {
     setBuildings(newData);
   };
 
-  const handleSaveSchedule = async () => {
-    if (!scheduleName.trim()) return;
+  const handleClearSchedule = () => {
+    if (window.confirm('Are you sure you want to clear the entire schedule? This action cannot be undone.')) {
+      const emptyBuildings: IBuildings[] = [];
+      const buildingNames: TBuildingName[] = ['HUB', 'North', 'South', 'West', 'East'];
+      
+      for (const buildingName of buildingNames) {
+        emptyBuildings.push({
+          buildingName,
+          capitan: {} as Player,
+          shift: Shift.first,
+          rallySize: 0,
+          players: []
+        });
+        emptyBuildings.push({
+          buildingName,
+          capitan: {} as Player,
+          shift: Shift.second,
+          rallySize: 0,
+          players: []
+        });
+      }
+      
+      setBuildings(emptyBuildings);
+      setAttackPlayers([]); // Очищаем игроков атаки
+    }
+  };
 
+  const handleClearBuilding = (building: IBuildings) => {
+    if (window.confirm(`Are you sure you want to clear the ${building.buildingName} building (${building.shift === Shift.first ? 'First' : 'Second'} Shift)?`)) {
+      setBuildings(prev => 
+        prev.map(b => 
+          b.buildingName === building.buildingName && b.shift === building.shift
+            ? {
+                ...b,
+                capitan: {} as Player,
+                rallySize: 0,
+                players: []
+              }
+            : b
+        )
+      );
+    }
+  };
+
+  const handleSaveSchedule = async () => {
     const currentUser = getCurrentUser();
     if (!currentUser?.email) {
-      alert('You need to be logged in');
+      setSaveNotification({ type: 'error', message: 'You need to be logged in to save schedules' });
       return;
     }
 
-    if (existingSchedule) {
-      // Обновляем существующее расписание
-      await updateScheduleMutation.mutateAsync({
-        scheduleId: existingSchedule.id,
-        buildings
-      });
-    } else {
-      // Создаем новое расписание
-      await saveScheduleMutation.mutateAsync({
-        eventDate: dates!.nextDate,
-        buildings,
-        createdBy: currentUser.email
-      });
+    // Конвертируем всех игроков атаки в нужный формат для сохранения
+    const allAttackPlayers: IAttackPlayer[] = attackPlayersData?.map(player => ({
+      id: player.id,
+      name: player.name,
+      alliance: player.alliance,
+      troopTier: player.troopTier,
+      marchSize: player.marchSize,
+      isCapitan: player.isCapitan,
+      troopFighter: player.troopFighter,
+      troopShooter: player.troopShooter,
+      troopRider: player.troopRider
+    })) || [];
+
+    try {
+      if (existingSchedule) {
+        // Обновляем существующее расписание
+        await updateScheduleMutation.mutateAsync({
+          scheduleId: existingSchedule.id,
+          buildings,
+          attackPlayers: allAttackPlayers
+        });
+      } else {
+        // Создаем новое расписание
+        await saveScheduleMutation.mutateAsync({
+          eventDate: dates!.nextDate,
+          buildings,
+          attackPlayers: allAttackPlayers,
+          createdBy: currentUser.email
+        });
+      }
+    } catch (error) {
+      // Ошибки обрабатываются в onError мутаций
+      console.error('Save schedule error:', error);
     }
   };
 
@@ -190,13 +306,23 @@ const OrganizePlayers = () => {
                 <div className="text-danger">Captain not assigned</div>
               )}
             </div>
-            <Button 
-              size="sm" 
-              variant="outline-primary"
-              onClick={() => handleEditBuilding(item)}
-            >
-              Edit
-            </Button>
+            <div>
+              <Button 
+                size="sm" 
+                variant="outline-primary"
+                onClick={() => handleEditBuilding(item)}
+                className="me-2"
+              >
+                Edit
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline-danger"
+                onClick={() => handleClearBuilding(item)}
+              >
+                Clear
+              </Button>
+            </div>
           </div>
         </Card.Header>
         <Card.Body>
@@ -274,6 +400,17 @@ const OrganizePlayers = () => {
 
   return (
     <div>
+      {saveNotification && (
+        <Alert 
+          variant={saveNotification.type === 'success' ? 'success' : 'danger'} 
+          className="mb-3"
+          onClose={() => setSaveNotification(null)}
+          dismissible
+        >
+          {saveNotification.message}
+        </Alert>
+      )}
+      
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Player Organization</h2>
         <div>
@@ -298,6 +435,13 @@ const OrganizePlayers = () => {
           >
             Auto Fill Schedule
           </Button>
+          <Button 
+            variant="outline-secondary" 
+            className="me-2"
+            onClick={handleClearSchedule}
+          >
+            Clear Schedule
+          </Button>
           <ExportPlayersList players={playersData || []} buildings={buildings} />
           <Button 
             variant="primary"
@@ -311,7 +455,21 @@ const OrganizePlayers = () => {
 
       {showStats && playersData && (
         <div className="mb-4">
-          <PlayersStats players={playersData} buildings={buildings} />
+          <PlayersStats 
+            players={playersData} 
+            buildings={buildings} 
+            attackPlayers={attackPlayersData?.map(player => ({
+              id: player.id,
+              name: player.name,
+              alliance: player.alliance,
+              troopTier: player.troopTier,
+              marchSize: player.marchSize,
+              isCapitan: player.isCapitan,
+              troopFighter: player.troopFighter,
+              troopShooter: player.troopShooter,
+              troopRider: player.troopRider
+            })) || []} 
+          />
         </div>
       )}
 
@@ -362,22 +520,16 @@ const OrganizePlayers = () => {
           <Modal.Title>Save Schedule</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group>
-              <Form.Label>Schedule Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={scheduleName}
-                onChange={(e) => setScheduleName(e.target.value)}
-                placeholder="Enter schedule name"
-              />
-            </Form.Group>
-            <Alert variant="info" className="mt-3">
-              <strong>Event Date:</strong> {dates?.nextDate.toLocaleDateString()}
-              <br />
-              <strong>Status:</strong> {existingSchedule ? 'Update existing' : 'Create new'}
+          <Alert variant="info" className="mb-3">
+            <strong>Event Date:</strong> {dates?.nextDate.toLocaleDateString()}
+            <br />
+            <strong>Status:</strong> {existingSchedule ? 'Update existing schedule' : 'Create new schedule'}
+          </Alert>
+          {saveNotification && (
+            <Alert variant={saveNotification.type === 'success' ? 'success' : 'danger'} className="mb-3">
+              {saveNotification.message}
             </Alert>
-          </Form>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowSaveModal(false)}>
@@ -386,7 +538,7 @@ const OrganizePlayers = () => {
           <Button 
             variant="primary" 
             onClick={handleSaveSchedule}
-            disabled={!scheduleName.trim() || saveScheduleMutation.isPending}
+            disabled={saveScheduleMutation.isPending}
           >
             {saveScheduleMutation.isPending ? 'Saving...' : 'Save'}
           </Button>

@@ -1,14 +1,15 @@
 import React from 'react';
 import { Card, Row, Col, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Player } from '../../types/Player';
-import { IBuildings } from '../../types/Buildings';
+import { IBuildings, IAttackPlayer } from '../../types/Buildings';
 
 interface PlayersStatsProps {
   players: Player[];
   buildings: IBuildings[];
+  attackPlayers?: IAttackPlayer[];
 }
 
-const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
+const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings, attackPlayers = [] }) => {
   const stats = React.useMemo(() => {
     const assignedPlayers = players.filter(p => 
       buildings.some(building => 
@@ -36,6 +37,10 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
         building.players.some(pl => pl.player.id === p.id)
       )
     );
+
+    // Attack players statistics
+    const attackCaptains = attackPlayers.filter(p => p.isCapitan);
+    const attackRegular = attackPlayers.filter(p => !p.isCapitan);
 
     // Troop type statistics
     const fighters = players.filter(p => p.troopFighter);
@@ -68,6 +73,11 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
         assigned: assignedRegular.length,
         unassigned: regularPlayers.length - assignedRegular.length
       },
+      attack: {
+        total: attackPlayers.length,
+        captains: attackCaptains.length,
+        regular: attackRegular.length
+      },
       troopTypes: {
         fighters: fighters.length,
         shooters: shooters.length,
@@ -85,7 +95,7 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
         withoutCaptains: buildings.filter(b => !b.capitan?.id).length
       }
     };
-  }, [players, buildings]);
+  }, [players, buildings, attackPlayers]);
 
   return (
     <Card className="mb-3">
@@ -126,7 +136,7 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
                 >
                   <Badge bg="warning" className="me-1">{stats.captains.assigned}</Badge>
                 </OverlayTrigger>
-              
+               
                 {stats.captains.asPlayers > 0 && (
                   <OverlayTrigger
                     placement="top"
@@ -189,6 +199,39 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
           </Col>
         </Row>
         
+        {stats.attack.total > 0 && (
+          <>
+            <hr />
+            <Row>
+              <Col md={12}>
+                <div className="text-center">
+                  <h6>Attack Players</h6>
+                  <div>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip id="attack-total-tooltip">Total attack players</Tooltip>}
+                    >
+                      <Badge bg="danger" className="me-2">Total: {stats.attack.total}</Badge>
+                    </OverlayTrigger>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip id="attack-captains-tooltip">Attack captains</Tooltip>}
+                    >
+                      <Badge bg="warning" className="me-2">Captains: {stats.attack.captains}</Badge>
+                    </OverlayTrigger>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip id="attack-regular-tooltip">Attack regular players</Tooltip>}
+                    >
+                      <Badge bg="primary">Regular: {stats.attack.regular}</Badge>
+                    </OverlayTrigger>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </>
+        )}
+        
         <hr />
         
         <Row>
@@ -247,10 +290,11 @@ const PlayersStats: React.FC<PlayersStatsProps> = ({ players, buildings }) => {
                 .sort(([a], [b]) => Number(b) - Number(a))
                 .map(([tier, count]) => (
                   <OverlayTrigger
+                    key={tier}
                     placement="top"
                     overlay={<Tooltip id={`tier-${tier}-tooltip`}>Troop tier {tier}</Tooltip>}
                   >
-                    <Badge key={tier} bg="secondary" className="me-1 mb-1">
+                    <Badge bg="secondary" className="me-1 mb-1">
                       T{tier}: {count}
                     </Badge>
                   </OverlayTrigger>

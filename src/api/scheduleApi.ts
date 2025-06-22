@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where, addDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { ISchedule, IBuildings } from '../types/Buildings';
+import { ISchedule, IBuildings, IAttackPlayer } from '../types/Buildings';
 import { Player } from '../types/Player';
 
 // Получить все расписания
@@ -15,6 +15,7 @@ export const fetchSchedules = async (): Promise<ISchedule[]> => {
     eventDate: doc.data().eventDate.toDate(),
     createdAt: doc.data().createdAt.toDate(),
     updatedAt: doc.data().updatedAt.toDate(),
+    attackPlayers: doc.data().attackPlayers || [], // Добавляем игроков атаки
   })) as ISchedule[];
 };
 
@@ -38,6 +39,7 @@ export const fetchScheduleByEventDate = async (eventDate: Date): Promise<ISchedu
     eventDate: doc.data().eventDate.toDate(),
     createdAt: doc.data().createdAt.toDate(),
     updatedAt: doc.data().updatedAt.toDate(),
+    attackPlayers: doc.data().attackPlayers || [], // Добавляем игроков атаки
   } as ISchedule;
 };
 
@@ -53,9 +55,10 @@ export const saveSchedule = async (schedule: Omit<ISchedule, 'id' | 'createdAt' 
 };
 
 // Обновить расписание
-export const updateSchedule = async (scheduleId: string, buildings: IBuildings[]): Promise<void> => {
+export const updateSchedule = async (scheduleId: string, buildings: IBuildings[], attackPlayers: IAttackPlayer[]): Promise<void> => {
   await updateDoc(doc(db, 'schedules', scheduleId), {
     buildings,
+    attackPlayers,
     updatedAt: new Date(),
   });
 };
@@ -99,4 +102,22 @@ export const fetchAllDefensePlayers = async (): Promise<Player[]> => {
     createdAt: doc.data().createdAt.toDate(),
     updatedAt: doc.data().updatedAt.toDate(),
   })) as Player[];
+};
+
+// Получить игроков для атаки
+export const fetchAttackPlayers = async (): Promise<Player[]> => {
+  const q = query(
+    collection(db, 'players'),
+    where('isAttack', '==', true) // Только игроки для атаки
+  );
+  
+  const querySnapshot = await getDocs(q);
+  const attackPlayers = querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: doc.data().createdAt.toDate(),
+    updatedAt: doc.data().updatedAt.toDate(),
+  })) as Player[];
+  
+  return attackPlayers;
 }; 
