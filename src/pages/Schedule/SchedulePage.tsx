@@ -315,7 +315,7 @@ const SchedulePage = () => {
       troopTypesToShow = getTroopTypes(selectedPlayer);
     }
 
-    return (
+  return (
       <Card className="mt-3">
         <Card.Header>
           <h6>Player Information: {selectedPlayer.name}</h6>
@@ -573,8 +573,8 @@ const SchedulePage = () => {
             {secondShiftBuildings.map(building => (
               <BuildingWithPagination key={building.buildingName} building={building} shiftType="second" itemsPerPage={itemsPerPage} />
             ))}
-          </Col>
-        </Row>
+      </Col>
+    </Row>
       </div>
     );
   };
