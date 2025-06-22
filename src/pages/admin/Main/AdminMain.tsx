@@ -17,11 +17,12 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table';
-import {Button, Card, Pagination, Table} from "react-bootstrap";
+import {Button, Card, Pagination, Table, Form} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
 import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
 import {useEffect, useState} from "react";
 import {fetchPlayers} from "../../../api/fetchPlayers.ts";
+import {fetchAllPlayers} from "../../../api/fetchAllPlayers.ts";
 
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
@@ -221,16 +222,18 @@ function DebouncedInput({
 
 
 function AdminMain() {
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
 
   const {data: dates, isLoading: datesIsloading, isError: datesIsError, error: datesError} = useQuery({
     queryKey: ['wastelandDates'],
     queryFn: fetchWastelandDates
   });
   console.log(dates)
+  
   const {data: playersData, isLoading: playersIsLoading, isError: playersIsError, error: playersError} = useQuery({
-    queryKey: ['players'],
-    queryFn: () => fetchPlayers(dates!),
-    enabled: !!dates
+    queryKey: ['players', showAllPlayers],
+    queryFn: () => showAllPlayers ? fetchAllPlayers() : fetchPlayers(dates!),
+    enabled: !!dates || showAllPlayers
   });
 
   const table = useReactTable({
@@ -273,10 +276,10 @@ function AdminMain() {
 
     // Создаем рабочую книгу и добавляем лист
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'players');
+    XLSX.utils.book_append_sheet(workbook, worksheet, showAllPlayers ? 'all_players' : 'current_players');
 
     // Сохраняем файл напрямую через SheetJS
-    XLSX.writeFile(workbook, 'players_export.xlsx', {
+    XLSX.writeFile(workbook, `${showAllPlayers ? 'all_players' : 'current_players'}_export.xlsx`, {
       bookType: 'xlsx',
       type: 'array',
     });
@@ -287,8 +290,21 @@ function AdminMain() {
   if (playersIsError) return <div>Error loading players data: {playersError.message}</div>;
   return (
     <Card>
-      <Card.Header className={'d-flex justify-content-between'}><h2>List of players</h2><Button onClick={handleExport}>download
-        xlsx</Button></Card.Header>
+      <Card.Header className={'d-flex justify-content-between align-items-center'}>
+        <div className="d-flex align-items-center">
+          <h2 className="mb-0 me-3">List of players</h2>
+          <Form.Check
+            type="switch"
+            id="show-all-players"
+            label="Show all registered players"
+            checked={showAllPlayers}
+            onChange={(e) => setShowAllPlayers(e.target.checked)}
+          />
+        </div>
+        <Button onClick={handleExport}>
+          Download {showAllPlayers ? 'all players' : 'current players'} xlsx
+        </Button>
+      </Card.Header>
       <Card.Body>
         <Table responsive className="w-full border-collapse">
           <thead>
