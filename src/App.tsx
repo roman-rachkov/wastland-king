@@ -17,7 +17,11 @@ import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminUsers from "./pages/admin/Settings/AdminUsers";
 import ForumAuth from "./pages/ForumAuth";
 import Forum from "./pages/Forum";
+import SectionPage from "./pages/Forum/SectionPage";
+import CreateTopicPage from "./pages/Forum/CreateTopicPage";
+import TopicPage from "./pages/Forum/TopicPage";
 import PublicNavbar from "./Components/PublicNavbar";
+import ForumManagement from "./pages/admin/ForumManagement";
 
 function App() {
   return (
@@ -29,6 +33,7 @@ function App() {
             <Route index element={<RegistrationForm/>}/>
             <Route path={'players'} element={<PlayersList/>}/>
             <Route path={'schedule'} element={<SchedulePage/>}/>
+            <Route path={'thanks'} element={<ThanksPage/>}/>
           </Route>
           
           {/* Страницы с навбаром, но без PublicLayout */}
@@ -59,7 +64,31 @@ function App() {
                 </Container>
               </>
             }/>
-            {/* TODO: Добавить маршруты для разделов, тем и сообщений */}
+            <Route path={'section/:sectionId'} element={
+              <>
+                <PublicNavbar />
+                <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                  <SectionPage/>
+                </Container>
+              </>
+            }/>
+            <Route path={'section/:sectionId/create-topic'} element={
+              <>
+                <PublicNavbar />
+                <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                  <CreateTopicPage/>
+                </Container>
+              </>
+            }/>
+            <Route path={'topic/:topicId'} element={
+              <>
+                <PublicNavbar />
+                <Container className="mt-4 flex-grow-1 d-flex flex-column">
+                  <TopicPage/>
+                </Container>
+              </>
+            }/>
+            {/* TODO: Добавить маршруты для тем и сообщений */}
           </Route>
           
           <Route path={'admin'}>
@@ -69,6 +98,7 @@ function App() {
               <Route path={'settings'} element={<Settings/>}/>
               <Route path={'admin-users'} element={<AdminUsers/>}/>
               <Route path={'organize-players'} element={<OrganizePlayers/>}/>
+              <Route path={'forum'} element={<ForumManagement/>}/>
             </Route>
           </Route>
         </Routes>

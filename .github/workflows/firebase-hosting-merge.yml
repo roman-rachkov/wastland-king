@@ -16,6 +16,11 @@ jobs:
       VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
       VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.MESSAGING_SENDER_ID }}
       VITE_FIREBASE_APP_ID: ${{ secrets.APP_ID }}
+      # Image Upload Service Configuration
+      VITE_IMAGE_UPLOAD_SERVICE: imgbb
+      VITE_IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+      VITE_MAX_FILE_SIZE: 33554432
+      VITE_ALLOWED_FILE_TYPES: image/jpeg,image/png,image/gif,image/webp,image/bmp
     steps:
       - uses: actions/checkout@v4
       - name: Set Node.js 22.0.0
@@ -26,6 +31,8 @@ jobs:
         run: |
           echo "FIREBASE_PROJECT_ID: $VITE_FIREBASE_PROJECT_ID"
           echo "Using API key: ${VITE_FIREBASE_API_KEY:0:8}..."  # Показывает первые 8 символов без раскрытия секрета
+          echo "Image upload service: $VITE_IMAGE_UPLOAD_SERVICE"
+          echo "ImgBB API key configured: ${VITE_IMGBB_API_KEY:+yes}"  # Показывает только наличие ключа
       - name: Run install
         uses: borales/actions-yarn@v4
         with:

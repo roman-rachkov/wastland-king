@@ -1,0 +1,232 @@
+// Responsive Image Styles
+.responsive-image-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: 0.5rem 0;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: #f8f9fa;
+  
+  &:hover {
+    .image-overlay {
+      opacity: 1;
+    }
+    
+    .responsive-image {
+      transform: scale(1.02);
+    }
+  }
+  
+  &.spoiler-image {
+    cursor: pointer;
+    
+    .spoiler-blur {
+      filter: blur(10px);
+      transition: filter 0.3s ease;
+    }
+    
+    &:hover .spoiler-blur {
+      filter: blur(0);
+    }
+  }
+}
+
+.responsive-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  transition: transform 0.2s ease-in-out;
+  
+  // Responsive breakpoints
+  @media (max-width: 576px) {
+    max-width: 100%;
+  }
+  
+  @media (min-width: 577px) and (max-width: 768px) {
+    max-width: 80%;
+  }
+  
+  @media (min-width: 769px) and (max-width: 992px) {
+    max-width: 70%;
+  }
+  
+  @media (min-width: 993px) {
+    max-width: 60%;
+  }
+}
+
+.image-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.image-loading {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-error {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+// Modal styles
+.image-modal-overlay {
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+  
+  .image-modal-content {
+    animation: scaleIn 0.3s ease-out;
+    
+    img {
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease-in-out;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+    
+    .btn-close {
+      transition: all 0.2s ease-in-out;
+      
+      &:hover {
+        transform: scale(1.1);
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// Forum post specific styles
+.forum-post {
+  .responsive-image-container {
+    margin: 1rem 0;
+    
+    .responsive-image {
+      max-width: 100%;
+      
+      @media (min-width: 768px) {
+        max-width: 80%;
+      }
+      
+      @media (min-width: 1200px) {
+        max-width: 70%;
+      }
+    }
+  }
+}
+
+// Editor specific styles
+.rich-text-editor {
+  .responsive-image-container {
+    margin: 0.25rem 0;
+    
+    .responsive-image {
+      max-width: 100%;
+      
+      @media (min-width: 768px) {
+        max-width: 90%;
+      }
+    }
+  }
+  
+  // Make regular img tags in editor responsive
+  .ProseMirror {
+    img.responsive-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.375rem;
+      margin: 0.5rem 0;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+      
+      &:hover {
+        transform: scale(1.02);
+      }
+      
+      // Responsive breakpoints for editor images
+      @media (max-width: 576px) {
+        max-width: 100%;
+      }
+      
+      @media (min-width: 577px) and (max-width: 768px) {
+        max-width: 80%;
+      }
+      
+      @media (min-width: 769px) and (max-width: 992px) {
+        max-width: 70%;
+      }
+      
+      @media (min-width: 993px) {
+        max-width: 60%;
+      }
+    }
+  }
+}
+
+// Spoiler specific styles
+.spoiler-image {
+  position: relative;
+  
+  &::before {
+    content: "👁️ Click to reveal";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 0;
+  }
+  
+  .spoiler-blur {
+    filter: blur(15px);
+  }
+} 

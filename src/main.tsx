@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.scss'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import './utils/configCheck' // Check image upload configuration on startup
 
 // Глобальный обработчик ошибок для диагностики
 window.addEventListener('error', (event) => {

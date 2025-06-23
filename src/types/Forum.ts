@@ -71,6 +71,23 @@ export interface Topic {
   lastPostAt?: Date;
 }
 
+// Типы для API (без связанных объектов)
+export interface TopicApi {
+  id: string;
+  title: string;
+  content: string;
+  sectionId: string;
+  authorId: string;
+  authorName?: string;
+  isSticky: boolean;
+  isLocked: boolean;
+  isActive: boolean;
+  views: number;
+  createdAt: Date;
+  updatedAt: Date;
+  lastPostAt?: Date;
+}
+
 export interface Post {
   id: string;
   content: string;
@@ -83,6 +100,24 @@ export interface Post {
   editedBy?: string;
   editedAt?: Date;
   editReason?: string;
+}
+
+// Типы для API (без связанных объектов)
+export interface PostApi {
+  id: string;
+  content: string;
+  topicId: string;
+  authorId: string;
+  authorName?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  isEdited: boolean;
+  editedBy?: string;
+  editedAt?: Date;
+  editReason?: string;
+  replyTo?: string; // ID поста, на который отвечает это сообщение
+  postNumber?: number; // Номер поста в теме (для отображения)
 }
 
 export interface ImageUpload {
@@ -123,6 +158,7 @@ export interface CreateTopicInput {
 export interface CreatePostInput {
   content: string;
   topicId: string;
+  replyTo?: string; // ID поста, на который отвечает это сообщение
 }
 
 export interface CreateSectionInput {

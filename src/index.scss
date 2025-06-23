@@ -1,5 +1,6 @@
 /* The following line can be included in a src/App.scss */
 @import 'bootstrap/scss/bootstrap';
-@import "style/reset";
-@import "style/fonts";
-@import "style/theme";
+@import './style/reset.scss';
+@import './style/fonts.scss';
+@import './style/theme.scss';
+@import './style/forum-content.scss';

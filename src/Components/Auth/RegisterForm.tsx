@@ -41,7 +41,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       
       // TODO: Создать запись пользователя в базе данных
       // await createUserInDatabase({
@@ -65,7 +65,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
 
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider);
       
       // TODO: Создать запись пользователя в базе данных
       // await createUserInDatabase({

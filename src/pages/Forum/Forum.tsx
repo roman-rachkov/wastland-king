@@ -1,113 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router';
 import { auth } from '../../services/firebase';
-import { ForumSection } from '../../types/Forum';
+import { useForumSections } from '../../hooks/useForum';
 
 const Forum: React.FC = () => {
-  const [sections, setSections] = useState<ForumSection[]>([]);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+  
+  // Using React Query to load sections
+  const { 
+    data: sections = [], 
+    isLoading, 
+    error 
+  } = useForumSections();
 
   useEffect(() => {
-    // Подписываемся на изменения авторизации
+    // Subscribe to authentication changes
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
-      // Временно убираем проверку авторизации для тестирования
+      // Temporarily removing authentication check for testing
       // if (!user) {
       //   navigate('/forum/auth');
       // }
     });
 
-    // TODO: Загрузить разделы форума
-    loadSections();
-
     return () => unsubscribe();
   }, [navigate]);
-
-  const loadSections = async () => {
-    try {
-      setLoading(true);
-      // TODO: Загрузить разделы через GraphQL
-      // const sectionsData = await fetchForumSections();
-      // setSections(sectionsData);
-      
-      // Временные данные для демонстрации
-      setSections([
-        {
-          id: '1',
-          name: 'Общие обсуждения',
-          description: 'Общие темы и обсуждения',
-          order: 1,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          readPermissions: [],
-          writePermissions: []
-        },
-        {
-          id: '2',
-          name: 'Техническая поддержка',
-          description: 'Вопросы по игре и технические проблемы',
-          order: 2,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          readPermissions: [],
-          writePermissions: []
-        }
-      ]);
-    } catch (error) {
-      console.error('Error loading sections:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSectionClick = (sectionId: string) => {
     navigate(`/forum/section/${sectionId}`);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Container className="py-5">
         <div className="text-center">
           <div className="spinner-border" role="status">
-            <span className="visually-hidden">Загрузка...</span>
+            <span className="visually-hidden">Loading...</span>
           </div>
         </div>
       </Container>
     );
   }
 
+  if (error) {
+    return (
+      <Container className="py-5">
+        <Alert variant="danger">
+          <Alert.Heading>Forum Loading Error</Alert.Heading>
+          <p>
+            Failed to load forum sections. Please try again later.
+          </p>
+          <hr />
+          <p className="mb-0">
+            If the problem persists, contact the administrator.
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-4">
-      {/* Заголовок */}
+      {/* Header */}
       <Row className="mb-4">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <div>
-              <h1>Форум Wasteland</h1>
+              <h1>Wasteland Forum</h1>
               <p className="text-muted mb-0">
-                Добро пожаловать, {user?.displayName || user?.email}!
+                Welcome, {user?.displayName || user?.email}!
               </p>
             </div>
           </div>
         </Col>
       </Row>
 
-      {/* Разделы форума */}
+      {/* Forum Sections */}
       <Row>
         <Col>
           <Card>
             <Card.Header>
-              <h5 className="mb-0">Разделы форума</h5>
+              <h5 className="mb-0">Forum Sections</h5>
             </Card.Header>
             <Card.Body className="p-0">
               {sections.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-muted">Разделы форума пока не созданы</p>
+                  <p className="text-muted">No forum sections created yet</p>
+                  {user && (
+                    <p className="text-muted small">
+                      Administrators can create sections in the control panel
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="list-group list-group-flush">
@@ -126,8 +111,8 @@ const Forum: React.FC = () => {
                       </div>
                       <div className="text-end">
                         <Badge bg="secondary" className="me-2">
-                          {/* TODO: Показать количество тем */}
-                          0 тем
+                          {/* TODO: Show topic count */}
+                          0 topics
                         </Badge>
                         <i className="fas fa-chevron-right text-muted"></i>
                       </div>
@@ -140,30 +125,30 @@ const Forum: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Статистика */}
+      {/* Statistics */}
       <Row className="mt-4">
         <Col>
           <Card>
             <Card.Header>
-              <h6 className="mb-0">Статистика форума</h6>
+              <h6 className="mb-0">Forum Statistics</h6>
             </Card.Header>
             <Card.Body>
               <Row className="text-center">
                 <Col>
                   <h4>0</h4>
-                  <small className="text-muted">Тем</small>
+                  <small className="text-muted">Topics</small>
                 </Col>
                 <Col>
                   <h4>0</h4>
-                  <small className="text-muted">Сообщений</small>
+                  <small className="text-muted">Posts</small>
                 </Col>
                 <Col>
                   <h4>0</h4>
-                  <small className="text-muted">Пользователей</small>
+                  <small className="text-muted">Users</small>
                 </Col>
                 <Col>
                   <h4>0</h4>
-                  <small className="text-muted">Новых сегодня</small>
+                  <small className="text-muted">New Today</small>
                 </Col>
               </Row>
             </Card.Body>
