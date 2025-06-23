@@ -10,7 +10,7 @@ import Underline from '@tiptap/extension-underline';
 import { imageUploadConfig } from '../../config/imageUpload';
 import { useImageUpload } from './useImageUpload';
 import { useImageZoom } from '../../hooks/useImageZoom';
-import { Spoiler } from './extensions';
+import { FontSize, Spoiler } from './extensions';
 import EditorToolbar from './EditorToolbar';
 import ServiceStatus from './ServiceStatus';
 import EditorTips from './EditorTips';
@@ -49,6 +49,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }),
       Color,
       TextStyle,
+      FontSize,
       Underline
     ],
     content: value,
@@ -67,12 +68,24 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     uploadError,
     handleImageUpload,
     handlePaste,
-    handleDrop,
-    addSpoiler
+    handleDrop
   } = useImageUpload(editor);
 
   // Enable image zoom functionality
   useImageZoom();
+
+  // Sync editor content with value prop
+  useEffect(() => {
+    if (editor) {
+      const currentContent = editor.getHTML();
+      console.log('RichTextEditor: Current content length:', currentContent.length, 'New value length:', value.length);
+      
+      if (value !== currentContent) {
+        console.log('RichTextEditor: Syncing content, value length:', value.length);
+        editor.commands.setContent(value || '');
+      }
+    }
+  }, [editor, value]);
 
   // Global paste handler as fallback
   useEffect(() => {
@@ -135,7 +148,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         editor={editor}
         isUploading={isUploading}
         onImageUpload={handleImageUpload}
-        onAddSpoiler={addSpoiler}
         onSetLink={setLink}
       />
       

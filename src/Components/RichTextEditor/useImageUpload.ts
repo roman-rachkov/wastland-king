@@ -95,41 +95,12 @@ export const useImageUpload = (editor: Editor | null) => {
     }
   };
 
-  const addSpoiler = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const target = e.target as HTMLInputElement;
-      const file = target?.files?.[0];
-      if (file && editor) {
-        setIsUploading(true);
-        try {
-          const imageUrl = await uploadImage(file);
-          // Insert spoiler as HTML with data-spoiler attribute
-          const spoilerHTML = `<img src="${imageUrl}" alt="Spoiler" data-spoiler="true" class="responsive-image" />`;
-          editor.chain().focus().insertContent(spoilerHTML).run();
-        } catch (error) {
-          console.error('Error uploading spoiler image:', error);
-        } finally {
-          setIsUploading(false);
-        }
-      }
-      // Reset input safely
-      if (target) {
-        target.value = '';
-      }
-    };
-    input.click();
-  };
-
   return {
     isUploading,
     uploadError,
     addImage,
     handleImageUpload,
     handlePaste,
-    handleDrop,
-    addSpoiler
+    handleDrop
   };
 }; 

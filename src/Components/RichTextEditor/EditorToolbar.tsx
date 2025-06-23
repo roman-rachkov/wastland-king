@@ -5,7 +5,6 @@ interface EditorToolbarProps {
   editor: Editor;
   isUploading: boolean;
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onAddSpoiler: () => void;
   onSetLink: () => void;
 }
 
@@ -13,7 +12,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   editor,
   isUploading,
   onImageUpload,
-  onAddSpoiler,
   onSetLink
 }) => {
   return (
@@ -51,6 +49,52 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       >
         <s>S</s>
       </button>
+      
+      <div className="vr mx-2"></div>
+      
+      {/* Font Size */}
+      <div className="btn-group" role="group">
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setMark('fontSize', { size: '12px' }).run()}
+          className={`btn btn-sm ${editor.isActive('fontSize', { size: '12px' }) ? 'btn-primary' : 'btn-outline-secondary'}`}
+          title="Small Text"
+        >
+          Small
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setMark('fontSize', { size: '16px' }).run()}
+          className={`btn btn-sm ${editor.isActive('fontSize', { size: '16px' }) ? 'btn-primary' : 'btn-outline-secondary'}`}
+          title="Normal Text"
+        >
+          Normal
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setMark('fontSize', { size: '20px' }).run()}
+          className={`btn btn-sm ${editor.isActive('fontSize', { size: '20px' }) ? 'btn-primary' : 'btn-outline-secondary'}`}
+          title="Large Text"
+        >
+          Large
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setMark('fontSize', { size: '24px' }).run()}
+          className={`btn btn-sm ${editor.isActive('fontSize', { size: '24px' }) ? 'btn-primary' : 'btn-outline-secondary'}`}
+          title="Extra Large Text"
+        >
+          XL
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().unsetMark('fontSize').run()}
+          className="btn btn-sm btn-outline-secondary"
+          title="Reset Font Size"
+        >
+          Reset
+        </button>
+      </div>
       
       <div className="vr mx-2"></div>
       
@@ -156,19 +200,18 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           {isUploading ? '⏳' : '🖼️'}
         </label>
       </div>
-      <button
-        type="button"
-        onClick={onAddSpoiler}
-        disabled={isUploading}
-        className="btn btn-sm btn-outline-warning"
-        title="Add Spoiler Image"
-      >
-        {isUploading ? '⏳' : '🚫'}
-      </button>
       
       <div className="vr mx-2"></div>
       
       {/* Blocks */}
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().wrapIn('spoiler').run()}
+        className={`btn btn-sm ${editor.isActive('spoiler') ? 'btn-primary' : 'btn-outline-secondary'}`}
+        title="Add Spoiler"
+      >
+        🚫 Spoiler
+      </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBlockquote().run()}

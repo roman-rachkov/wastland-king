@@ -311,40 +311,43 @@
   overflow-wrap: break-word;
 }
 
-// Spoiler click handler styles
+// Spoiler styles
 .spoiler-container {
-  position: relative;
-  display: inline-block;
+  margin: 1rem 0;
   
-  .spoiler-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  .spoiler-toggle {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
     border-radius: 0.5rem;
-    transition: opacity 0.3s ease;
-    
-    .spoiler-text {
-      color: white;
-      font-weight: bold;
-      font-size: 0.9rem;
-      text-align: center;
-      padding: 1rem;
-    }
+    transition: all 0.2s ease;
     
     &:hover {
-      background: rgba(0, 0, 0, 0.7);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   }
   
-  &.revealed .spoiler-overlay {
-    opacity: 0;
-    pointer-events: none;
+  .spoiler-content {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+    margin-top: 0.5rem;
+    
+    // Ensure images inside spoilers are responsive
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.25rem;
+    }
+    
+    // Style other content inside spoilers
+    p, div, h1, h2, h3, h4, h5, h6 {
+      margin-bottom: 0.5rem;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
   }
 } 

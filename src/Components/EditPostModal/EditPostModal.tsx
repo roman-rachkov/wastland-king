@@ -22,15 +22,26 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 }) => {
   const [content, setContent] = useState('');
 
+  console.log('EditPostModal render:', { 
+    show, 
+    postId: post?.id, 
+    postContentLength: post?.content?.length,
+    contentLength: content.length 
+  });
+
+  // Reset content when post changes or modal opens
   useEffect(() => {
-    if (post) {
+    if (post && show) {
+      console.log('EditPostModal: Setting content for post:', post.id, 'content length:', post.content.length);
       setContent(post.content);
     }
-  }, [post]);
+  }, [post?.id, show]); // Only depend on post ID and show state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
+    
+    console.log('EditPostModal: Submitting content for post:', post?.id);
     
     try {
       await onSave(content);
@@ -41,11 +52,15 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
   };
 
   const handleCancel = () => {
-    setContent(post?.content || '');
+    console.log('EditPostModal: Canceling edit');
     onHide();
   };
 
-  if (!post) return null;
+  if (!post) {
+    return null;
+  }
+
+  console.log('Rendering RichTextEditor with content length:', content.length);
 
   return (
     <Modal show={show} onHide={handleCancel} size="lg">

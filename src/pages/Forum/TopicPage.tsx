@@ -54,6 +54,11 @@ const TopicPage: React.FC = () => {
     if (createPostMutation.isSuccess) {
       console.log('Post creation successful, updating UI...');
       
+      // Clear input fields
+      setNewPostContent('');
+      setReplyContent('');
+      setReplyTo(null);
+      
       // Force refetch posts to ensure we have the latest data
       const refetchPosts = async () => {
         try {
@@ -72,6 +77,30 @@ const TopicPage: React.FC = () => {
       }, 1000);
     }
   }, [createPostMutation.isSuccess, topicId, queryClient, createPostMutation]);
+
+  // Handle successful post update
+  useEffect(() => {
+    if (updatePostMutation.isSuccess) {
+      console.log('Post update successful, updating UI...');
+      
+      // Force refetch posts to ensure we have the latest data
+      const refetchPosts = async () => {
+        try {
+          await queryClient.refetchQueries({ queryKey: ['posts', topicId || ''] });
+          console.log('Posts refetched after update');
+        } catch (error) {
+          console.error('Error refetching posts after update:', error);
+        }
+      };
+      
+      refetchPosts();
+      
+      // Reset mutation state after a delay
+      setTimeout(() => {
+        updatePostMutation.reset();
+      }, 1000);
+    }
+  }, [updatePostMutation.isSuccess, topicId, queryClient, updatePostMutation]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -101,12 +130,18 @@ const TopicPage: React.FC = () => {
   };
 
   const handleEdit = (post: PostApi) => {
-    setEditingPost(post);
+    console.log('Editing post:', post.id);
+    setEditingPost(post); // Use the post directly
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async (content: string) => {
-    if (!editingPost) return;
+    if (!editingPost) {
+      console.error('No editing post found');
+      return;
+    }
+    
+    console.log('Saving edit for post:', editingPost.id);
     
     try {
       await updatePostMutation.mutateAsync({
@@ -115,6 +150,7 @@ const TopicPage: React.FC = () => {
         editedBy: user?.uid
       });
       
+      console.log('Post updated successfully');
       setShowEditModal(false);
       setEditingPost(null);
     } catch (error) {
@@ -139,8 +175,7 @@ const TopicPage: React.FC = () => {
       });
       
       console.log('Reply created successfully');
-      setReplyTo(null);
-      setReplyContent('');
+      // Fields will be cleared in useEffect when mutation succeeds
     } catch (error) {
       console.error('Error creating reply:', error);
     }
@@ -162,7 +197,7 @@ const TopicPage: React.FC = () => {
       });
       
       console.log('New post created successfully');
-      setNewPostContent('');
+      // Fields will be cleared in useEffect when mutation succeeds
       
       // Wait for cache to update, then go to last page
       setTimeout(() => {
