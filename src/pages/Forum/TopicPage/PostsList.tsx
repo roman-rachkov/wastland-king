@@ -8,13 +8,12 @@ interface PostsListProps {
   posts: PostApi[];
   startIndex: number;
   replyTo: string | null;
-  replyContent: string;
   onReply: (postId: string) => void;
-  onReplyContentChange: (content: string) => void;
-  onReplySubmit: (e: React.FormEvent) => void;
+  onReplySubmit: (content: string) => Promise<void>;
   onReplyCancel: () => void;
   onEdit: (post: PostApi) => void;
-  isPending: boolean;
+  isLoading: boolean;
+  error?: string | null;
   formatDate: (date: Date) => string;
 }
 
@@ -22,13 +21,12 @@ const PostsList: React.FC<PostsListProps> = ({
   posts,
   startIndex,
   replyTo,
-  replyContent,
   onReply,
-  onReplyContentChange,
   onReplySubmit,
   onReplyCancel,
   onEdit,
-  isPending,
+  isLoading,
+  error,
   formatDate
 }) => {
   return (
@@ -59,13 +57,10 @@ const PostsList: React.FC<PostsListProps> = ({
                 <Col>
                   <div className="ms-5">
                     <ReplyForm
-                      replyTo={replyTo}
-                      replyContent={replyContent}
-                      onContentChange={onReplyContentChange}
                       onSubmit={onReplySubmit}
                       onCancel={onReplyCancel}
-                      isPending={isPending}
-                      title={`Reply to Post #${currentPostNumber}`}
+                      isLoading={isLoading}
+                      error={error}
                     />
                   </div>
                 </Col>

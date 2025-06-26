@@ -1,6 +1,5 @@
 import React from 'react';
 import ResponsiveImage from './RichTextEditor/ResponsiveImage';
-import Spoiler from './Spoiler';
 
 interface PostProps {
   content: string;
@@ -25,7 +24,7 @@ const Post: React.FC<PostProps> = ({ content, className }) => {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
         
-        // Handle spoiler blocks - use interactive Spoiler component
+        // Handle spoiler blocks - create as div[data-spoiler] instead of SpoilerImage component
         if (element.hasAttribute('data-spoiler')) {
           const title = element.getAttribute('data-title') || 'Spoiler';
           const children = Array.from(element.childNodes).map((child, childIndex) => 
@@ -33,12 +32,14 @@ const Post: React.FC<PostProps> = ({ content, className }) => {
           );
           
           return (
-            <Spoiler 
-              key={`spoiler-${index}`}
-              title={title}
+            <div 
+              key={`spoiler-${index}`} 
+              data-spoiler="true"
+              data-title={title}
+              className="spoiler-container"
             >
               {children}
-            </Spoiler>
+            </div>
           );
         }
         

@@ -12,7 +12,6 @@ import { useImageUpload } from './useImageUpload';
 import { useImageZoom } from '../../hooks/useImageZoom';
 import { FontSize, Spoiler } from './extensions';
 import EditorToolbar from './EditorToolbar';
-import ServiceStatus from './ServiceStatus';
 import EditorTips from './EditorTips';
 import './ResponsiveImage.scss';
 
@@ -26,7 +25,6 @@ interface RichTextEditorProps {
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = 'Start writing...',
   className = ''
 }) => {
   const editor = useEditor({
@@ -55,7 +53,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     content: value,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      console.log('RichTextEditor: HTML updated:', html.substring(0, 200) + '...');
       onChange(html);
     },
     editorProps: {
@@ -89,20 +86,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       // Only handle if editor is focused
       if (!editor?.isFocused) return;
       
-      console.log('Global paste event triggered');
-      
       try {
         const items = Array.from(event.clipboardData?.items || []);
-        console.log('Global clipboard items:', items.map(item => item.type));
         
         const imageItem = items.find(item => item.type.startsWith('image/'));
         
         if (imageItem) {
-          console.log('Global image item found:', imageItem.type);
           event.preventDefault();
           
           const file = imageItem.getAsFile();
-          console.log('Global file from clipboard:', file);
           
           if (file) {
             handleImageUpload(file);
@@ -138,8 +130,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-      <ServiceStatus service={imageUploadConfig.service} />
-      
       <EditorToolbar
         editor={editor}
         isUploading={isUploading}

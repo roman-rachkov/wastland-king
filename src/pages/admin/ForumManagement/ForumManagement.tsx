@@ -60,7 +60,6 @@ const ForumManagement: React.FC = () => {
   };
 
   const openEditModal = (section: any) => {
-    setEditingSection(section);
     setFormData({
       name: section.name,
       description: section.description || '',
@@ -69,10 +68,6 @@ const ForumManagement: React.FC = () => {
       writePermissions: section.writePermissions || []
     });
     setShowEditModal(true);
-  };
-
-  const resetForm = () => {
-    setFormData({ name: '', description: '', order: 0, readPermissions: [], writePermissions: [] });
   };
 
   if (isLoading) {

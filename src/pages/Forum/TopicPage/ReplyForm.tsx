@@ -1,65 +1,37 @@
 import React from 'react';
-import { Row, Col, Card, Form, Button } from 'react-bootstrap';
-import RichTextEditor from '../../../Components/RichTextEditor';
+import { Card } from 'react-bootstrap';
+import ForumPostForm from '../../../Components/ForumPostForm';
 
 interface ReplyFormProps {
-  replyTo: string;
-  replyContent: string;
-  onContentChange: (content: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (content: string) => Promise<void>;
   onCancel: () => void;
-  isPending: boolean;
-  title: string;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const ReplyForm: React.FC<ReplyFormProps> = ({
-  replyTo,
-  replyContent,
-  onContentChange,
   onSubmit,
   onCancel,
-  isPending,
-  title
+  isLoading = false,
+  error = null
 }) => {
-  if (!replyTo) return null;
-
   return (
-    <Row className="mb-4">
-      <Col>
-        <Card>
-          <Card.Header>
-            <h6 className="mb-0">{title}</h6>
-          </Card.Header>
-          <Card.Body>
-            <Form onSubmit={onSubmit}>
-              <Form.Group className="mb-3">
-                <RichTextEditor
-                  value={replyContent}
-                  onChange={onContentChange}
-                  placeholder="Write your reply..."
-                />
-              </Form.Group>
-              <div className="d-flex gap-2">
-                <Button 
-                  type="submit" 
-                  variant="primary"
-                  disabled={isPending}
-                >
-                  {isPending ? 'Posting...' : 'Post Reply'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline-secondary"
-                  onClick={onCancel}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+    <Card className="mb-3">
+      <Card.Header>
+        <h6 className="mb-0">Reply</h6>
+      </Card.Header>
+      <Card.Body>
+        <ForumPostForm
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          placeholder="Write your reply..."
+          submitText="Reply"
+          cancelText="Cancel"
+          isLoading={isLoading}
+          error={error}
+        />
+      </Card.Body>
+    </Card>
   );
 };
 

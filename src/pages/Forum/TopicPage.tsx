@@ -24,8 +24,6 @@ const TopicPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [replyContent, setReplyContent] = useState('');
   const [editingPost, setEditingPost] = useState<PostApi | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -41,8 +39,7 @@ const TopicPage: React.FC = () => {
 
   const { 
     data: posts = [], 
-    isLoading: postsLoading, 
-    error: postsError 
+    isLoading: postsLoading
   } = usePosts(topicId || '');
 
   const queryClient = useQueryClient();
@@ -52,20 +49,14 @@ const TopicPage: React.FC = () => {
   // Handle successful post creation
   useEffect(() => {
     if (createPostMutation.isSuccess) {
-      console.log('Post creation successful, updating UI...');
-      
       // Clear input fields
-      setNewPostContent('');
-      setReplyContent('');
       setReplyTo(null);
       
       // Force refetch posts to ensure we have the latest data
       const refetchPosts = async () => {
         try {
           await queryClient.refetchQueries({ queryKey: ['posts', topicId || ''] });
-          console.log('Posts refetched successfully');
         } catch (error) {
-          console.error('Error refetching posts:', error);
         }
       };
       
@@ -81,15 +72,11 @@ const TopicPage: React.FC = () => {
   // Handle successful post update
   useEffect(() => {
     if (updatePostMutation.isSuccess) {
-      console.log('Post update successful, updating UI...');
-      
       // Force refetch posts to ensure we have the latest data
       const refetchPosts = async () => {
         try {
           await queryClient.refetchQueries({ queryKey: ['posts', topicId || ''] });
-          console.log('Posts refetched after update');
         } catch (error) {
-          console.error('Error refetching posts after update:', error);
         }
       };
       
@@ -121,27 +108,21 @@ const TopicPage: React.FC = () => {
 
   const handleReply = (postId: string) => {
     setReplyTo(postId);
-    setReplyContent('');
   };
 
   const handleCancelReply = () => {
     setReplyTo(null);
-    setReplyContent('');
   };
 
   const handleEdit = (post: PostApi) => {
-    console.log('Editing post:', post.id);
     setEditingPost(post); // Use the post directly
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async (content: string) => {
     if (!editingPost) {
-      console.error('No editing post found');
       return;
     }
-    
-    console.log('Saving edit for post:', editingPost.id);
     
     try {
       await updatePostMutation.mutateAsync({
@@ -150,63 +131,47 @@ const TopicPage: React.FC = () => {
         editedBy: user?.uid
       });
       
-      console.log('Post updated successfully');
       setShowEditModal(false);
       setEditingPost(null);
     } catch (error) {
-      console.error('Error updating post:', error);
     }
   };
 
-  const handleSubmitReply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user || !topicId || !replyTo || !replyContent.trim()) return;
+  const handleSubmitReply = async (content: string) => {
+    if (!user || !topicId || !replyTo || !content.trim()) return;
 
     try {
-      console.log('Creating reply...');
       await createPostMutation.mutateAsync({
         input: {
-          content: replyContent,
+          content: content,
           topicId: topicId,
           replyTo: replyTo === 'topic' ? undefined : replyTo
         },
         authorId: user.uid
       });
       
-      console.log('Reply created successfully');
-      // Fields will be cleared in useEffect when mutation succeeds
     } catch (error) {
-      console.error('Error creating reply:', error);
     }
   };
 
-  const handleSubmitNewPost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user || !topicId || !newPostContent.trim()) return;
+  const handleSubmitNewPost = async (content: string) => {
+    if (!user || !topicId || !content.trim()) return;
 
     try {
-      console.log('Creating new post...');
       await createPostMutation.mutateAsync({
         input: {
-          content: newPostContent,
+          content: content,
           topicId: topicId
         },
         authorId: user.uid
       });
       
-      console.log('New post created successfully');
-      // Fields will be cleared in useEffect when mutation succeeds
-      
       // Wait for cache to update, then go to last page
       setTimeout(() => {
         const newTotalPages = Math.ceil((posts.length + 1) / POSTS_PER_PAGE);
-        console.log('Navigating to page:', newTotalPages);
         setCurrentPage(newTotalPages);
       }, 500);
     } catch (error) {
-      console.error('Error creating post:', error);
     }
   };
 
@@ -269,15 +234,14 @@ const TopicPage: React.FC = () => {
       />
 
       {/* Reply to Topic */}
-      <ReplyForm
-        replyTo={replyTo === 'topic' ? 'topic' : ''}
-        replyContent={replyContent}
-        onContentChange={setReplyContent}
-        onSubmit={handleSubmitReply}
-        onCancel={handleCancelReply}
-        isPending={createPostMutation.isPending}
-        title="Reply to Topic"
-      />
+      {replyTo === 'topic' && (
+        <ReplyForm
+          onSubmit={handleSubmitReply}
+          onCancel={handleCancelReply}
+          isLoading={createPostMutation.isPending}
+          error={createPostMutation.error?.message}
+        />
+      )}
 
       {/* Posts */}
       {postsLoading ? (
@@ -295,13 +259,12 @@ const TopicPage: React.FC = () => {
           posts={currentPosts}
           startIndex={startIndex}
           replyTo={replyTo}
-          replyContent={replyContent}
           onReply={handleReply}
-          onReplyContentChange={setReplyContent}
           onReplySubmit={handleSubmitReply}
           onReplyCancel={handleCancelReply}
           onEdit={handleEdit}
-          isPending={createPostMutation.isPending}
+          isLoading={createPostMutation.isPending}
+          error={createPostMutation.error?.message}
           formatDate={formatDate}
         />
       )}
@@ -316,14 +279,27 @@ const TopicPage: React.FC = () => {
       )}
 
       {/* New Post Form */}
-      <NewPostForm
-        content={newPostContent}
-        onContentChange={setNewPostContent}
-        onSubmit={handleSubmitNewPost}
-        isPending={createPostMutation.isPending}
-        error={createPostMutation.error?.message}
-        isLocked={topic.isLocked}
-      />
+      {!topic.isLocked && (
+        <NewPostForm
+          onSubmit={handleSubmitNewPost}
+          isLoading={createPostMutation.isPending}
+          error={createPostMutation.error?.message}
+        />
+      )}
+
+      {/* Topic Locked Message */}
+      {topic.isLocked && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="warning">
+              <Alert.Heading>Topic Locked</Alert.Heading>
+              <p>
+                This topic is locked. New posts are not allowed.
+              </p>
+            </Alert>
+          </Col>
+        </Row>
+      )}
 
       {/* Edit Post Modal */}
       <EditPostModal

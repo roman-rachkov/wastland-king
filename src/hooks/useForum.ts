@@ -98,15 +98,9 @@ export const useCreateTopic = () => {
     mutationFn: ({ input, authorId }: { input: CreateTopicInput; authorId: string }) =>
       createTopic(input, authorId),
     onSuccess: (newTopic, { input }) => {
-      console.log('Topic created successfully, invalidating cache for section:', input.sectionId);
-      
-      // Invalidate and refetch topics for this section
       queryClient.invalidateQueries({ queryKey: ['topics', input.sectionId] });
-      
-      // Also invalidate forum sections to update topic count
       queryClient.invalidateQueries({ queryKey: ['forumSections'] });
       
-      // Optimistically update the cache
       queryClient.setQueryData(['topics', input.sectionId], (oldData: any) => {
         if (!oldData) return [newTopic];
         return [newTopic, ...oldData];
@@ -160,50 +154,35 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ input, authorId }: { input: CreatePostInput; authorId: string }) =>
-      createPost(input, authorId),
-    onMutate: async ({ input, authorId }) => {
-      // Cancel any outgoing refetches
+    mutationFn: ({ input, authorId: _authorId }: { input: CreatePostInput; authorId: string }) =>
+      createPost(input, _authorId),
+    onMutate: async ({ input, authorId: _authorId }) => {
       await queryClient.cancelQueries({ queryKey: ['posts', input.topicId] });
       
-      // Snapshot the previous value
       const previousPosts = queryClient.getQueryData(['posts', input.topicId]);
       
-      // Optimistically update to the new value
       queryClient.setQueryData(['posts', input.topicId], (old: any) => {
         if (!old) return [];
         return old;
       });
       
-      // Return a context object with the snapshotted value
       return { previousPosts };
     },
     onSuccess: (newPost, { input }) => {
-      console.log('Post created successfully, invalidating cache for topic:', input.topicId);
-      console.log('New post data:', newPost);
-      
-      // Aggressively invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['posts', input.topicId] });
       queryClient.invalidateQueries({ queryKey: ['topics'] });
       queryClient.invalidateQueries({ queryKey: ['forumSections'] });
       
-      // Force immediate refetch
       queryClient.refetchQueries({ queryKey: ['posts', input.topicId] });
       
-      // Also refetch topics to update lastPostAt
       queryClient.refetchQueries({ queryKey: ['topics'] });
     },
     onError: (error, variables, context) => {
-      console.error('Error creating post:', error);
-      console.error('Post data that failed:', variables);
-      
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousPosts) {
         queryClient.setQueryData(['posts', variables.input.topicId], context.previousPosts);
       }
     },
-    onSettled: (data, error, { input }) => {
-      // Always refetch after error or success
+    onSettled: (_data, _error, { input }) => {
       queryClient.invalidateQueries({ queryKey: ['posts', input.topicId] });
     },
   });
