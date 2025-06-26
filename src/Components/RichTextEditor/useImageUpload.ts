@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { uploadImage } from '../../services/imageUpload';
 
@@ -6,7 +6,7 @@ export const useImageUpload = (editor: Editor | null) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const addImage = async (file: File) => {
+  const addImage = useCallback(async (file: File) => {
     if (!editor || !file) return;
 
     // Validate file type
@@ -27,9 +27,9 @@ export const useImageUpload = (editor: Editor | null) => {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [editor]);
 
-  const handleImageUpload = (input: React.ChangeEvent<HTMLInputElement> | File) => {
+  const handleImageUpload = useCallback((input: React.ChangeEvent<HTMLInputElement> | File) => {
     let file: File | null = null;
     
     if (input instanceof File) {
@@ -38,16 +38,20 @@ export const useImageUpload = (editor: Editor | null) => {
       file = input.target?.files?.[0] || null;
       // Reset input safely
       if (input.target) {
-        input.target.value = '';
+        try {
+          input.target.value = '';
+        } catch (error) {
+          console.warn('Error resetting input:', error);
+        }
       }
     }
     
     if (file) {
       addImage(file);
     }
-  };
+  }, [addImage]);
 
-  const handlePaste = (event: React.ClipboardEvent) => {
+  const handlePaste = useCallback((event: React.ClipboardEvent) => {
     console.log('Paste event triggered');
     
     try {
@@ -80,9 +84,9 @@ export const useImageUpload = (editor: Editor | null) => {
     } catch (error) {
       console.error('Error in handlePaste:', error);
     }
-  };
+  }, [addImage]);
 
-  const handleDrop = (event: React.DragEvent) => {
+  const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     
     if (!event.dataTransfer?.files) return;
@@ -93,7 +97,7 @@ export const useImageUpload = (editor: Editor | null) => {
     if (imageFile) {
       addImage(imageFile);
     }
-  };
+  }, [addImage]);
 
   return {
     isUploading,

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import React, { useEffect, useRef } from 'react';
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -13,6 +13,7 @@ import { useImageZoom } from '../../hooks/useImageZoom';
 import { FontSize, Spoiler } from './extensions';
 import EditorToolbar from './EditorToolbar';
 import EditorTips from './EditorTips';
+import SafeEditorContent from './SafeEditorContent';
 import './ResponsiveImage.scss';
 
 interface RichTextEditorProps {
@@ -27,6 +28,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange,
   className = ''
 }) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+  
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -52,8 +55,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      onChange(html);
+      try {
+        const html = editor.getHTML();
+        onChange(html);
+      } catch (error) {
+        console.warn('Error updating editor content:', error);
+      }
     },
     editorProps: {
       attributes: {
@@ -76,7 +83,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Sync editor content with value prop
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
+      try {
+        editor.commands.setContent(value);
+      } catch (error) {
+        console.warn('Error setting editor content:', error);
+      }
     }
   }, [editor, value]);
 
@@ -115,7 +126,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const setLink = () => {
     const url = window.prompt('Enter URL');
     if (url && editor) {
-      editor.chain().focus().setLink({ href: url }).run();
+      try {
+        editor.chain().focus().setLink({ href: url }).run();
+      } catch (error) {
+        console.warn('Error setting link:', error);
+      }
     }
   };
 
@@ -125,6 +140,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div 
+      ref={editorRef}
       className={`rich-text-editor ${className}`}
       onPaste={handlePaste}
       onDrop={handleDrop}
@@ -150,7 +166,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
       >
-        <EditorContent 
+        <SafeEditorContent 
           editor={editor} 
           onPaste={handlePaste}
           onDrop={handleDrop}

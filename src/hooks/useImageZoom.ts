@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useImageZoom = () => {
+  const isModalOpenRef = useRef(false);
+  const observerRef = useRef<MutationObserver | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    // Track if modal is already open
-    let isModalOpen = false;
-    
     const handleImageClick = (event: Event) => {
       const target = event.target as HTMLImageElement;
       
       // Prevent if modal is already open, image is in modal, or has spoiler attribute
-      if (isModalOpen || 
+      if (isModalOpenRef.current || 
           target.tagName !== 'IMG' || 
           target.hasAttribute('data-spoiler') || 
           target.closest('.image-modal-overlay') ||
@@ -20,10 +21,11 @@ export const useImageZoom = () => {
       event.preventDefault();
       event.stopPropagation();
       
-      isModalOpen = true;
+      isModalOpenRef.current = true;
       
       // Create modal overlay
       const modal = document.createElement('div');
+      modalRef.current = modal;
       modal.className = 'image-modal-overlay';
       modal.style.cssText = `
         position: fixed;
@@ -78,10 +80,15 @@ export const useImageZoom = () => {
       
       // Close modal function
       const closeModal = () => {
-        if (document.body.contains(modal)) {
-          document.body.removeChild(modal);
+        if (modal && document.body.contains(modal)) {
+          try {
+            document.body.removeChild(modal);
+          } catch (error) {
+            console.warn('Error removing modal:', error);
+          }
           document.body.style.overflow = '';
-          isModalOpen = false;
+          isModalOpenRef.current = false;
+          modalRef.current = null;
           document.removeEventListener('keydown', handleKeyDown);
         }
       };
@@ -104,18 +111,27 @@ export const useImageZoom = () => {
       content.appendChild(img);
       content.appendChild(closeBtn);
       modal.appendChild(content);
-      document.body.appendChild(modal);
       
-      // Focus close button for accessibility
-      closeBtn.focus();
+      // Safely append to body
+      try {
+        document.body.appendChild(modal);
+        // Focus close button for accessibility
+        closeBtn.focus();
+      } catch (error) {
+        console.error('Error appending modal to body:', error);
+        isModalOpenRef.current = false;
+        modalRef.current = null;
+      }
     };
     
     // Add click listeners to all images
     const addImageListeners = () => {
       const images = document.querySelectorAll('img:not([data-zoom-initialized]):not([data-modal-image])');
       images.forEach(img => {
-        img.setAttribute('data-zoom-initialized', 'true');
-        img.addEventListener('click', handleImageClick);
+        if (!img.hasAttribute('data-zoom-initialized')) {
+          img.setAttribute('data-zoom-initialized', 'true');
+          img.addEventListener('click', handleImageClick);
+        }
       });
     };
     
@@ -123,14 +139,40 @@ export const useImageZoom = () => {
     addImageListeners();
     
     // Watch for new images (for dynamic content)
-    const observer = new MutationObserver(addImageListeners);
+    const observer = new MutationObserver((mutations) => {
+      let shouldAddListeners = false;
+      
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              if (element.tagName === 'IMG' || element.querySelector('img')) {
+                shouldAddListeners = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (shouldAddListeners) {
+        addImageListeners();
+      }
+    });
+    
+    observerRef.current = observer;
     observer.observe(document.body, {
       childList: true,
       subtree: true
     });
     
     return () => {
-      observer.disconnect();
+      // Disconnect observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      
       // Remove listeners
       const images = document.querySelectorAll('img[data-zoom-initialized]');
       images.forEach(img => {
@@ -139,12 +181,17 @@ export const useImageZoom = () => {
       });
       
       // Clean up any open modals
-      const existingModals = document.querySelectorAll('.image-modal-overlay');
-      existingModals.forEach(modal => {
-        if (document.body.contains(modal)) {
-          document.body.removeChild(modal);
+      if (modalRef.current && document.body.contains(modalRef.current)) {
+        try {
+          document.body.removeChild(modalRef.current);
+        } catch (error) {
+          console.warn('Error removing modal during cleanup:', error);
         }
-      });
+      }
+      
+      // Reset state
+      isModalOpenRef.current = false;
+      modalRef.current = null;
       document.body.style.overflow = '';
     };
   }, []);

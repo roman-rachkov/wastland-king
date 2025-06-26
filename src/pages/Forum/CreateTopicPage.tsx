@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { auth } from '../../services/firebase';
@@ -36,22 +36,22 @@ const CreateTopicPage: React.FC = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const handleContentChange = (content: string) => {
+  const handleContentChange = useCallback((content: string) => {
     setFormData(prev => ({
       ...prev,
       content
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user || !sectionId) return;
@@ -73,11 +73,11 @@ const CreateTopicPage: React.FC = () => {
     } catch (error) {
       console.error('Error creating topic:', error);
     }
-  };
+  }, [user, sectionId, formData, createTopicMutation, navigate]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate(`/forum/section/${sectionId}`);
-  };
+  }, [navigate, sectionId]);
 
   if (sectionLoading) {
     return (
