@@ -21,35 +21,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
     setLoading(true);
     setError('');
 
-    // Валидация
-    if (password !== confirmPassword) {
-      setError('Пароли не совпадают');
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Пароль должен содержать минимум 6 символов');
-      setLoading(false);
-      return;
-    }
-
-    if (username.length < 3) {
-      setError('Имя пользователя должно содержать минимум 3 символа');
-      setLoading(false);
-      return;
-    }
-
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      
-      // TODO: Создать запись пользователя в базе данных
-      // await createUserInDatabase({
-      //   id: userCredential.user.uid,
-      //   username,
-      //   email,
-      // });
-
       onSuccess?.();
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -66,15 +39,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      
-      // TODO: Создать запись пользователя в базе данных
-      // await createUserInDatabase({
-      //   id: userCredential.user.uid,
-      //   username: userCredential.user.displayName || 'User',
-      //   email: userCredential.user.email || '',
-      //   avatar: userCredential.user.photoURL,
-      // });
-
       onSuccess?.();
     } catch (error: any) {
       console.error('Google registration error:', error);

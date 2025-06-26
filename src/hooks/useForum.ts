@@ -171,7 +171,7 @@ export const useCreatePost = () => {
       
       return { previousPosts };
     },
-    onSuccess: (newPost, { input }) => {
+    onSuccess: (_, { input }) => {
       queryClient.invalidateQueries({ queryKey: ['posts', input.topicId] });
       queryClient.invalidateQueries({ queryKey: ['topics'] });
       queryClient.invalidateQueries({ queryKey: ['forumSections'] });
@@ -181,6 +181,7 @@ export const useCreatePost = () => {
       queryClient.refetchQueries({ queryKey: ['topics'] });
     },
     onError: (error, variables, context) => {
+      console.error('Failed to create post:', error);
       if (context?.previousPosts) {
         queryClient.setQueryData(['posts', variables.input.topicId], context.previousPosts);
       }

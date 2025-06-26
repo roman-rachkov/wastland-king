@@ -91,6 +91,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
               </div>
             </Card.Header>
           )}
+          
           <Card.Body>
             {/* Reply indicator */}
             {replyTo && replyToPost && (
