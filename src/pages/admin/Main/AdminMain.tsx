@@ -164,6 +164,27 @@ function AdminMain() {
     retryDelay: 1000,
   });
 
+  const handleEditPlayer = useCallback((player: Player) => {
+    if (!isMounted) return;
+    setSelectedPlayer(player);
+    setShowEditModal(true);
+  }, [isMounted]);
+
+  const handleDeletePlayer = useCallback(async (player: Player) => {
+    if (!isMounted) return;
+    if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
+      try {
+        await deletePlayer(player.id);
+        // Refresh the data
+        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
+        alert('Player deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        alert('Failed to delete player. Please try again.');
+      }
+    }
+  }, [queryClient, showAllPlayers, isMounted]);
+
   const columns: ColumnDef<Player>[] = useMemo(() => [
     {
       header: 'Actions',
@@ -283,7 +304,7 @@ function AdminMain() {
       accessorFn: row => DateTime.fromJSDate(row.updatedAt).toFormat('dd.MM.yyyy HH:mm'),
       sortingFn: "datetime",
     },
-  ], []);
+  ], [handleEditPlayer, handleDeletePlayer]);
 
   // Создаем таблицу с безопасными данными - ВСЕГДА ВЫЗЫВАЕМ ХУК
   const table = useReactTable({
@@ -311,28 +332,6 @@ function AdminMain() {
       },
     },
   });
-
-  const handleEditPlayer = useCallback((player: Player) => {
-    if (!isMounted) return;
-    console.log('AdminMain: handleEditPlayer called for player:', player.name);
-    setSelectedPlayer(player);
-    setShowEditModal(true);
-  }, [isMounted]);
-
-  const handleDeletePlayer = useCallback(async (player: Player) => {
-    if (!isMounted) return;
-    if (confirm(`Are you sure you want to delete player "${player.name}"? This action cannot be undone.`)) {
-      try {
-        await deletePlayer(player.id);
-        // Refresh the data
-        queryClient.invalidateQueries({ queryKey: ['players', showAllPlayers] });
-        alert('Player deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting player:', error);
-        alert('Failed to delete player. Please try again.');
-      }
-    }
-  }, [queryClient, showAllPlayers, isMounted]);
 
   const handleShowAllPlayersChange = useCallback((checked: boolean) => {
     if (!isMounted) return;
