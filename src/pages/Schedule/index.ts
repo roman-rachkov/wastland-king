@@ -1,1 +1,1 @@
-export {default} from './SchedulePage.tsx'
+export {default} from './SchedulePage'

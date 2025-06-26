@@ -12,9 +12,9 @@ import {
 } from '@tanstack/react-table';
 import {Card, Pagination, Table} from "react-bootstrap";
 import {Player} from "../../types/Player.ts";
-import {fetchWastelandDates} from "../../api/fetchWastelandDates.ts";
+import {fetchWastelandDates} from "../../services/api/fetchWastelandDates.ts";
 import {useEffect, useState} from "react";
-import {fetchPlayers} from "../../api/fetchPlayers.ts";
+import {fetchPlayers} from "../../services/api/fetchPlayers.ts";
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){
   return filterValue === "" || filterValue === 'true' && row.getValue(columnId) || filterValue === 'false' && !row.getValue(columnId);

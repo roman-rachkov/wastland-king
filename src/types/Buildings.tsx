@@ -3,19 +3,25 @@ import {Player} from "./Player.ts";
 export type TBuildingName = 'HUB' | 'North' | 'South' | 'West' | 'East'
 
 export enum Shift {
-  first,
-  second
+  first = 1,
+  second = 2,
+  third = 3,
+  fourth = 4
 }
 
 export interface IBuildings {
   buildingName: TBuildingName;
   capitan: Player;
   shift: Shift;
-  rallySize: Player['rallySize']; // rallySize капитана
-  players: { player: Player; march: Player['marchSize'] }[];
+  rallySize: Player['rallySize']; // Captain's rally size
+  players: { 
+    player: Player; 
+    march: Player['marchSize'];
+    wasNormalized?: boolean; // Flag indicating that marchSize was normalized
+  }[];
 }
 
-// Новый тип для игроков атаки
+// New type for attack players
 export interface IAttackPlayer {
   id: string;
   name: string;
@@ -28,15 +34,23 @@ export interface IAttackPlayer {
   troopRider: boolean;
 }
 
-// Новые типы для расписания
+// New types for schedule
 export interface ISchedule {
   id: string;
   eventDate: Date;
   buildings: IBuildings[];
-  attackPlayers: IAttackPlayer[]; // Новое поле для игроков атаки
+  attackPlayers: IAttackPlayer[]; // New field for attack players
+  settings: {
+    shiftDuration: 2 | 4; // 2 or 4 hours
+    allowAttackPlayersInDefense: boolean;
+    tabInfo?: {
+      defense?: string; // Additional info for defense tab
+      attack?: string;  // Additional info for attack tab
+    };
+  };
   createdAt: Date;
   updatedAt: Date;
-  createdBy: string; // email админа
+  createdBy: string; // email admin
 }
 
 export interface IPlayerAssignment {

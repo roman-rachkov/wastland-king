@@ -35,7 +35,7 @@ import secondShift from "../../assets/images/2-shift.png";
 import capitan from "../../assets/images/capitan.png";
 import attackDefense from "../../assets/images/attack-defense.png";
 import rallySize from "../../assets/images/rally-size.jpg";
-import {fetchWastelandDates} from "../../api/fetchWastelandDates.ts";
+import {fetchWastelandDates} from "../../services/api/fetchWastelandDates.ts";
 
 type FormErrors = {
   troopTypes?: { message: string };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import { LoginForm, RegisterForm } from '../../Components/Auth';
+import { LoginForm, RegisterForm } from '../../components/common';
 import { useNavigate } from 'react-router';
 
 const ForumAuth: React.FC = () => {
@@ -8,7 +8,7 @@ const ForumAuth: React.FC = () => {
   const navigate = useNavigate();
 
   const handleAuthSuccess = () => {
-    // Перенаправляем на форум после успешной авторизации
+    // Redirect to forum after successful authorization
     navigate('/forum');
   };
 
@@ -25,9 +25,9 @@ const ForumAuth: React.FC = () => {
       <Row className="justify-content-center">
         <Col md={6} lg={5} xl={4}>
           <div className="text-center mb-4">
-            <h1 className="h3">Форум Wasteland</h1>
+            <h1 className="h3">Forum Wasteland</h1>
             <p className="text-muted">
-              {isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт'}
+              {isLogin ? 'Login to your account' : 'Create a new account'}
             </p>
           </div>
 

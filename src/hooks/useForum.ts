@@ -21,7 +21,7 @@ import {
   fetchForumStats,
   fetchSectionTopicCount,
   fetchTopicPostCount,
-} from '../api/forumApi';
+} from '../services/api/forumApi';
 import { CreateTopicInput, CreatePostInput, CreateSectionInput } from '../types/Forum';
 
 // ===== РАЗДЕЛЫ ФОРУМА =====

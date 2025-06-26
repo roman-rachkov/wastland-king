@@ -13,7 +13,7 @@ import {
   Pagination,
   NewPostForm
 } from './TopicPage/index';
-import EditPostModal from '../../Components/EditPostModal';
+import EditPostModal from '../../components/forum/EditPostModal';
 import { PostApi } from '../../types/Forum';
 
 const POSTS_PER_PAGE = 10;

@@ -1,5 +1,5 @@
 import React from 'react';
-import ForumPostForm from '../../../Components/ForumPostForm';
+import ForumPostForm from '../../../components/forum/ForumPostForm';
 
 interface NewPostFormProps {
   onSubmit: (content: string) => Promise<void>;

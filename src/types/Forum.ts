@@ -1,4 +1,4 @@
-// Типы для форума
+// Forum types
 
 export interface User {
   id: string;
@@ -71,7 +71,7 @@ export interface Topic {
   lastPostAt?: Date;
 }
 
-// Типы для API (без связанных объектов)
+// API types (without related objects)
 export interface TopicApi {
   id: string;
   title: string;
@@ -102,7 +102,7 @@ export interface Post {
   editReason?: string;
 }
 
-// Типы для API (без связанных объектов)
+// API types (without related objects)
 export interface PostApi {
   id: string;
   content: string;
@@ -116,8 +116,8 @@ export interface PostApi {
   editedBy?: string;
   editedAt?: Date;
   editReason?: string;
-  replyTo?: string; // ID поста, на который отвечает это сообщение
-  postNumber?: number; // Номер поста в теме (для отображения)
+  replyTo?: string; // ID of the post this message replies to
+  postNumber?: number; // Post number in the topic (for display)
 }
 
 export interface ImageUpload {
@@ -142,7 +142,7 @@ export interface UserActionLog {
   metadata?: string;
 }
 
-// Типы для создания/обновления
+// Types for creation/update
 export interface CreateUserInput {
   username: string;
   email: string;
@@ -158,7 +158,7 @@ export interface CreateTopicInput {
 export interface CreatePostInput {
   content: string;
   topicId: string;
-  replyTo?: string; // ID поста, на который отвечает это сообщение
+  replyTo?: string; // ID of the post this message replies to
 }
 
 export interface CreateSectionInput {
@@ -169,11 +169,11 @@ export interface CreateSectionInput {
   writePermissions?: string[];
 }
 
-// Типы для прав доступа
+// Types for access rights
 export interface Permission {
   resource: string; // 'topic', 'post', 'section', etc.
   action: string; // 'create', 'read', 'update', 'delete', 'moderate'
-  conditions?: Record<string, any>; // дополнительные условия
+  conditions?: Record<string, any>; // additional conditions
 }
 
 export interface UserPermissions {
@@ -183,18 +183,18 @@ export interface UserPermissions {
   permissions: Permission[];
 }
 
-// Типы для модерации
+// Types for moderation
 export interface ModerationAction {
   type: 'warn' | 'ban' | 'delete' | 'edit' | 'lock' | 'sticky';
-  targetId: string; // ID поста/темы/пользователя
+  targetId: string; // ID of the post/topic/user
   targetType: 'post' | 'topic' | 'user';
   reason: string;
-  duration?: number; // для временных банов в минутах
+  duration?: number; // for temporary bans in minutes
   moderatorId: string;
   createdAt: Date;
 }
 
-// Типы для антиспама
+// Types for anti-spam
 export interface SpamCheck {
   userId: string;
   action: string;

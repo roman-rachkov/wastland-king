@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from 'react-bootstrap';
-import ForumPostForm from '../../../Components/ForumPostForm';
+import ForumPostForm from '../../../components/forum/ForumPostForm';
 
 interface ReplyFormProps {
   onSubmit: (content: string) => Promise<void>;

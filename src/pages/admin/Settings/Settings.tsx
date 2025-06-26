@@ -1,15 +1,15 @@
 import {Col, Row} from "react-bootstrap";
-import PlayerCleanup from "../../../Components/Admin/Settings/PlayerCleanup";
+import PlayerCleanup from "../../../components/admin/Settings/PlayerCleanup";
 
 const Settings = () => {
-  return (
-    <Row className={'flex-column'}>
-      <Col>
-        <PlayerCleanup/>
-
-      </Col>
-    </Row>
-  );
+    return (
+        <Row>
+            <Col>
+                <h2>Настройки</h2>
+                <PlayerCleanup/>
+            </Col>
+        </Row>
+    );
 };
 
 export default Settings;

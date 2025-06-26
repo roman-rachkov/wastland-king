@@ -1,5 +1,5 @@
 import React from 'react';
-import ForumPost from '../../../Components/ForumPost';
+import ForumPost from '../../../components/forum/ForumPost';
 import { TopicApi } from '../../../types/Forum';
 
 interface TopicContentProps {

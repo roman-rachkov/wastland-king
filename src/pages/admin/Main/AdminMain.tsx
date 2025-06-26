@@ -19,14 +19,14 @@ import {
 } from '@tanstack/react-table';
 import {Button, Card, Pagination, Table, Form} from "react-bootstrap";
 import {Player} from "../../../types/Player.ts";
-import {fetchWastelandDates} from "../../../api/fetchWastelandDates.ts";
+import {fetchWastelandDates} from "../../../services/api/fetchWastelandDates.ts";
 import {useEffect, useState, useCallback, useMemo} from "react";
-import {fetchPlayers} from "../../../api/fetchPlayers.ts";
-import {fetchAllPlayers} from "../../../api/fetchAllPlayers.ts";
-import {deletePlayer} from "../../../api/deletePlayer.ts";
-import EditPlayerModal from "../../../Components/EditPlayerModal";
-import ColumnVisibilityToggle from "../../../Components/ColumnVisibilityToggle";
-import ActionsMenu from "../../../Components/ActionsMenu";
+import {fetchPlayers} from "../../../services/api/fetchPlayers.ts";
+import {fetchAllPlayers} from "../../../services/api/fetchAllPlayers.ts";
+import {deletePlayer} from "../../../services/api/deletePlayer.ts";
+import EditPlayerModal from "../../../components/players/EditPlayerModal";
+import ColumnVisibilityToggle from "../../../components/common/ColumnVisibilityToggle";
+import ActionsMenu from "../../../components/common/ActionsMenu";
 
 
 function booleanFilter<T>(row: Row<T>, columnId: string, filterValue: any){

@@ -4,7 +4,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { auth } from '../../services/firebase';
 import { useForumSection, useCreateTopic } from '../../hooks/useForum';
 import { CreateTopicInput } from '../../types/Forum';
-import RichTextEditor from '../../Components/RichTextEditor';
+import RichTextEditor from '../../components/forum/RichTextEditor';
 
 const CreateTopicPage: React.FC = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
