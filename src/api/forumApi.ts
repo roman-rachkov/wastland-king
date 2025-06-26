@@ -400,4 +400,112 @@ export const updateUser = async (id: string, userData: Partial<User>): Promise<v
     console.error('Error updating user:', error);
     throw error;
   }
+};
+
+// ===== СТАТИСТИКА ФОРУМА =====
+
+export interface ForumStats {
+  totalTopics: number;
+  totalPosts: number;
+  totalUsers: number;
+  topicsToday: number;
+  postsToday: number;
+  usersToday: number;
+}
+
+export const fetchForumStats = async (): Promise<ForumStats> => {
+  try {
+    // Получаем общее количество тем
+    const topicsRef = collection(db, 'topics');
+    const topicsQuery = query(topicsRef, where('isActive', '==', true));
+    const topicsSnapshot = await getDocs(topicsQuery);
+    const totalTopics = topicsSnapshot.size;
+
+    // Получаем общее количество постов
+    const postsRef = collection(db, 'posts');
+    const postsQuery = query(postsRef, where('isActive', '==', true));
+    const postsSnapshot = await getDocs(postsQuery);
+    const totalPosts = postsSnapshot.size;
+
+    // Получаем общее количество пользователей
+    const usersRef = collection(db, 'users');
+    const usersQuery = query(usersRef, where('isActive', '==', true));
+    const usersSnapshot = await getDocs(usersQuery);
+    const totalUsers = usersSnapshot.size;
+
+    // Получаем количество тем за сегодня
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const topicsTodayQuery = query(
+      topicsRef, 
+      where('isActive', '==', true),
+      where('createdAt', '>=', today)
+    );
+    const topicsTodaySnapshot = await getDocs(topicsTodayQuery);
+    const topicsToday = topicsTodaySnapshot.size;
+
+    // Получаем количество постов за сегодня
+    const postsTodayQuery = query(
+      postsRef, 
+      where('isActive', '==', true),
+      where('createdAt', '>=', today)
+    );
+    const postsTodaySnapshot = await getDocs(postsTodayQuery);
+    const postsToday = postsTodaySnapshot.size;
+
+    // Получаем количество новых пользователей за сегодня
+    const usersTodayQuery = query(
+      usersRef, 
+      where('isActive', '==', true),
+      where('createdAt', '>=', today)
+    );
+    const usersTodaySnapshot = await getDocs(usersTodayQuery);
+    const usersToday = usersTodaySnapshot.size;
+
+    return {
+      totalTopics,
+      totalPosts,
+      totalUsers,
+      topicsToday,
+      postsToday,
+      usersToday,
+    };
+  } catch (error) {
+    console.error('Error fetching forum stats:', error);
+    throw error;
+  }
+};
+
+// Получение количества тем для конкретного раздела
+export const fetchSectionTopicCount = async (sectionId: string): Promise<number> => {
+  try {
+    const topicsRef = collection(db, 'topics');
+    const q = query(
+      topicsRef, 
+      where('sectionId', '==', sectionId),
+      where('isActive', '==', true)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error fetching section topic count:', error);
+    return 0;
+  }
+};
+
+// Получение количества постов для конкретной темы
+export const fetchTopicPostCount = async (topicId: string): Promise<number> => {
+  try {
+    const postsRef = collection(db, 'posts');
+    const q = query(
+      postsRef, 
+      where('topicId', '==', topicId),
+      where('isActive', '==', true)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error fetching topic post count:', error);
+    return 0;
+  }
 }; 

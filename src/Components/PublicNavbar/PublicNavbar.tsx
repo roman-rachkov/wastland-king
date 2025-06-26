@@ -1,17 +1,30 @@
 import { Container, Nav, Navbar, Button } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router";
 import { useEffect, useState } from "react";
-import { signOutUser, onAuthStateChange } from "../../services/firebase";
+import { signOutUser, onAuthStateChange, checkAdminAccess } from "../../services/firebase";
 import { User } from "firebase/auth";
 
 const PublicNavbar = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange((user) => {
+    const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
+      
+      if (user) {
+        try {
+          const hasAdminAccess = await checkAdminAccess(user);
+          setIsAdmin(hasAdminAccess);
+        } catch (error) {
+          console.error('Error checking admin access:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => unsubscribe();
@@ -47,7 +60,7 @@ const PublicNavbar = () => {
               className="fw-medium"
             >
               <i className="fas fa-user-plus me-1"></i>
-              Регистрация
+              Registration
             </Nav.Link>
             <Nav.Link 
               as={Link} 
@@ -56,7 +69,7 @@ const PublicNavbar = () => {
               className="fw-medium"
             >
               <i className="fas fa-users me-1"></i>
-              Список игроков
+              Players List
             </Nav.Link>
             <Nav.Link 
               as={Link} 
@@ -65,7 +78,7 @@ const PublicNavbar = () => {
               className="fw-medium"
             >
               <i className="fas fa-calendar me-1"></i>
-              Расписание
+              Schedule
             </Nav.Link>
             <Nav.Link 
               as={Link} 
@@ -74,7 +87,7 @@ const PublicNavbar = () => {
               className="fw-medium"
             >
               <i className="fas fa-comments me-1"></i>
-              Форум
+              Forum
             </Nav.Link>
           </Nav>
           
@@ -87,9 +100,20 @@ const PublicNavbar = () => {
                     {user.displayName || user.email}
                   </span>
                 </Nav.Item>
+                {isAdmin && (
+                  <Button 
+                    variant="warning" 
+                    size="sm"
+                    className="me-2"
+                    onClick={() => navigate('/admin')}
+                  >
+                    <i className="fas fa-cog me-1"></i>
+                    Admin Panel
+                  </Button>
+                )}
                 <Button variant="outline-secondary" size="sm" onClick={handleSignOut}>
                   <i className="fas fa-sign-out-alt me-1"></i>
-                  Выйти
+                  Logout
                 </Button>
               </>
             ) : (
@@ -100,7 +124,7 @@ const PublicNavbar = () => {
                   onClick={() => navigate('/forum/auth')}
                 >
                   <i className="fas fa-sign-in-alt me-1"></i>
-                  Войти
+                  Login
                 </Button>
                 <Button 
                   variant="primary" 
@@ -108,7 +132,7 @@ const PublicNavbar = () => {
                   onClick={() => navigate('/forum/auth')}
                 >
                   <i className="fas fa-user-plus me-1"></i>
-                  Регистрация
+                  Registration
                 </Button>
               </div>
             )}

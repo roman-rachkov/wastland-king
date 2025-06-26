@@ -18,6 +18,9 @@ import {
   fetchUser,
   createUser,
   updateUser,
+  fetchForumStats,
+  fetchSectionTopicCount,
+  fetchTopicPostCount,
 } from '../api/forumApi';
 import { CreateTopicInput, CreatePostInput, CreateSectionInput } from '../types/Forum';
 
@@ -250,5 +253,33 @@ export const useUpdateUser = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['user', id] });
     },
+  });
+};
+
+// ===== СТАТИСТИКА ФОРУМА =====
+
+export const useForumStats = () => {
+  return useQuery({
+    queryKey: ['forumStats'],
+    queryFn: fetchForumStats,
+    staleTime: 5 * 60 * 1000, // 5 минут
+  });
+};
+
+export const useSectionTopicCount = (sectionId: string) => {
+  return useQuery({
+    queryKey: ['sectionTopicCount', sectionId],
+    queryFn: () => fetchSectionTopicCount(sectionId),
+    enabled: !!sectionId,
+    staleTime: 2 * 60 * 1000, // 2 минуты
+  });
+};
+
+export const useTopicPostCount = (topicId: string) => {
+  return useQuery({
+    queryKey: ['topicPostCount', topicId],
+    queryFn: () => fetchTopicPostCount(topicId),
+    enabled: !!topicId,
+    staleTime: 2 * 60 * 1000, // 2 минуты
   });
 }; 

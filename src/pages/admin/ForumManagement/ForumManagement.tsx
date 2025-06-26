@@ -156,14 +156,16 @@ const ForumManagement: React.FC = () => {
                               size="sm"
                               onClick={() => openEditModal(section)}
                             >
-                              <i className="fas fa-edit"></i>
+                              <i className="fas fa-edit me-1"></i>
+                              Edit
                             </Button>
                             <Button 
                               variant="outline-danger" 
                               size="sm"
                               onClick={() => handleDeleteSection(section.id)}
                             >
-                              <i className="fas fa-trash"></i>
+                              <i className="fas fa-trash me-1"></i>
+                              Delete
                             </Button>
                           </div>
                         </td>

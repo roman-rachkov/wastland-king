@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Container, Row, Col, Card, Badge, Button, Alert } from 'react-bootstrap';
 import { auth } from '../../services/firebase';
-import { useForumSection, useTopics } from '../../hooks/useForum';
+import { useForumSection, useTopics, useTopicPostCount } from '../../hooks/useForum';
 import { DateTime } from 'luxon';
 
 const SectionPage: React.FC = () => {
@@ -49,6 +49,57 @@ const SectionPage: React.FC = () => {
 
   const formatDate = (date: Date) => {
     return DateTime.fromJSDate(date).setLocale('en').toRelative();
+  };
+
+  // Компонент для отображения темы с количеством постов
+  const TopicItem: React.FC<{
+    topic: any;
+    onClick: (topicId: string) => void;
+  }> = ({ topic, onClick }) => {
+    const { data: postCount = 0 } = useTopicPostCount(topic.id);
+
+    return (
+      <div
+        className="list-group-item list-group-item-action"
+        onClick={() => onClick(topic.id)}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="d-flex justify-content-between align-items-start">
+          <div className="flex-grow-1">
+            <div className="d-flex align-items-center mb-1">
+              {topic.isSticky && (
+                <Badge bg="warning" className="me-2">
+                  <i className="fas fa-thumbtack"></i>
+                </Badge>
+              )}
+              {topic.isLocked && (
+                <Badge bg="danger" className="me-2">
+                  <i className="fas fa-lock"></i>
+                </Badge>
+              )}
+              <h6 className="mb-0">{topic.title}</h6>
+            </div>
+            <p className="text-muted mb-1 small">
+              Author: {topic.authorName || 'Unknown'} • 
+              Created: {formatDate(topic.createdAt)}
+            </p>
+            {topic.lastPostAt && (
+              <p className="text-muted mb-0 small">
+                Last post: {formatDate(topic.lastPostAt)}
+              </p>
+            )}
+          </div>
+          <div className="text-end">
+            <Badge bg="secondary" className="me-2">
+              {topic.views} views
+            </Badge>
+            <Badge bg="info">
+              {postCount} {postCount === 1 ? 'post' : 'posts'}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (sectionLoading || topicsLoading) {
@@ -157,48 +208,11 @@ const SectionPage: React.FC = () => {
               ) : (
                 <div className="list-group list-group-flush">
                   {topics.map((topic) => (
-                    <div
+                    <TopicItem
                       key={topic.id}
-                      className="list-group-item list-group-item-action"
-                      onClick={() => handleTopicClick(topic.id)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div className="flex-grow-1">
-                          <div className="d-flex align-items-center mb-1">
-                            {topic.isSticky && (
-                              <Badge bg="warning" className="me-2">
-                                <i className="fas fa-thumbtack"></i>
-                              </Badge>
-                            )}
-                            {topic.isLocked && (
-                              <Badge bg="danger" className="me-2">
-                                <i className="fas fa-lock"></i>
-                              </Badge>
-                            )}
-                            <h6 className="mb-0">{topic.title}</h6>
-                          </div>
-                          <p className="text-muted mb-1 small">
-                            Author: {topic.authorName || 'Unknown'} • 
-                            Created: {formatDate(topic.createdAt)}
-                          </p>
-                          {topic.lastPostAt && (
-                            <p className="text-muted mb-0 small">
-                              Last post: {formatDate(topic.lastPostAt)}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-end">
-                          <Badge bg="secondary" className="me-2">
-                            {topic.views} views
-                          </Badge>
-                          <Badge bg="info">
-                            {/* TODO: Show post count */}
-                            0 posts
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
+                      topic={topic}
+                      onClick={handleTopicClick}
+                    />
                   ))}
                 </div>
               )}

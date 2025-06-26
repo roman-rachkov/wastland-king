@@ -2,18 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Badge, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router';
 import { auth } from '../../services/firebase';
-import { useForumSections } from '../../hooks/useForum';
+import { useForumSections, useForumStats, useSectionTopicCount } from '../../hooks/useForum';
 
 const Forum: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   
-  // Using React Query to load sections
+  // Using React Query to load sections and stats
   const { 
     data: sections = [], 
-    isLoading, 
-    error 
+    isLoading: sectionsLoading, 
+    error: sectionsError 
   } = useForumSections();
+
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError
+  } = useForumStats();
 
   useEffect(() => {
     // Subscribe to authentication changes
@@ -31,6 +37,9 @@ const Forum: React.FC = () => {
   const handleSectionClick = (sectionId: string) => {
     navigate(`/forum/section/${sectionId}`);
   };
+
+  const isLoading = sectionsLoading || statsLoading;
+  const error = sectionsError || statsError;
 
   if (isLoading) {
     return (
@@ -50,7 +59,7 @@ const Forum: React.FC = () => {
         <Alert variant="danger">
           <Alert.Heading>Forum Loading Error</Alert.Heading>
           <p>
-            Failed to load forum sections. Please try again later.
+            Failed to load forum data. Please try again later.
           </p>
           <hr />
           <p className="mb-0">
@@ -97,26 +106,11 @@ const Forum: React.FC = () => {
               ) : (
                 <div className="list-group list-group-flush">
                   {sections.map((section) => (
-                    <div
-                      key={section.id}
-                      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                      onClick={() => handleSectionClick(section.id)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div>
-                        <h6 className="mb-1">{section.name}</h6>
-                        <p className="text-muted mb-0 small">
-                          {section.description}
-                        </p>
-                      </div>
-                      <div className="text-end">
-                        <Badge bg="secondary" className="me-2">
-                          {/* TODO: Show topic count */}
-                          0 topics
-                        </Badge>
-                        <i className="fas fa-chevron-right text-muted"></i>
-                      </div>
-                    </div>
+                    <SectionItem 
+                      key={section.id} 
+                      section={section} 
+                      onClick={handleSectionClick}
+                    />
                   ))}
                 </div>
               )}
@@ -135,19 +129,19 @@ const Forum: React.FC = () => {
             <Card.Body>
               <Row className="text-center">
                 <Col>
-                  <h4>0</h4>
+                  <h4>{stats?.totalTopics || 0}</h4>
                   <small className="text-muted">Topics</small>
                 </Col>
                 <Col>
-                  <h4>0</h4>
+                  <h4>{stats?.totalPosts || 0}</h4>
                   <small className="text-muted">Posts</small>
                 </Col>
                 <Col>
-                  <h4>0</h4>
+                  <h4>{stats?.totalUsers || 0}</h4>
                   <small className="text-muted">Users</small>
                 </Col>
                 <Col>
-                  <h4>0</h4>
+                  <h4>{stats?.topicsToday || 0}</h4>
                   <small className="text-muted">New Today</small>
                 </Col>
               </Row>
@@ -156,6 +150,35 @@ const Forum: React.FC = () => {
         </Col>
       </Row>
     </Container>
+  );
+};
+
+// Компонент для отображения раздела с количеством тем
+const SectionItem: React.FC<{
+  section: any;
+  onClick: (sectionId: string) => void;
+}> = ({ section, onClick }) => {
+  const { data: topicCount = 0 } = useSectionTopicCount(section.id);
+
+  return (
+    <div
+      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+      onClick={() => onClick(section.id)}
+      style={{ cursor: 'pointer' }}
+    >
+      <div>
+        <h6 className="mb-1">{section.name}</h6>
+        <p className="text-muted mb-0 small">
+          {section.description}
+        </p>
+      </div>
+      <div className="text-end">
+        <Badge bg="secondary" className="me-2">
+          {topicCount} {topicCount === 1 ? 'topic' : 'topics'}
+        </Badge>
+        <i className="fas fa-chevron-right text-muted"></i>
+      </div>
+    </div>
   );
 };
 
