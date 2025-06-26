@@ -1,109 +1,117 @@
-// Forum content styles
+// Forum content styles using BEM methodology
+
+// ===== EDITOR STYLES =====
 .forum-content {
-  // TipTap editor styles
-  .ProseMirror {
-    outline: none;
-    min-height: 200px;
-    padding: 1rem;
-    
-    &.ProseMirror-focused {
-      border-color: var(--bs-primary);
-    }
-    
-    // Headings
-    h1, h2, h3, h4, h5, h6 {
-      margin: 1rem 0 0.5rem 0;
-      font-weight: 600;
-      line-height: 1.25;
-    }
-    
-    h1 { font-size: 1.875rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-    
-    // Paragraphs
-    p {
-      margin: 0.5rem 0;
-      line-height: 1.6;
-    }
-    
-    // Lists
-    ul, ol {
-      margin: 0.5rem 0;
-      padding-left: 1.5rem;
-    }
-    
-    li {
-      margin: 0.25rem 0;
-    }
-    
-    // Links
-    a {
-      color: var(--bs-primary);
-      text-decoration: underline;
-      
-      &:hover {
-        color: var(--bs-primary-dark);
-      }
-    }
-    
-    // Images
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 0.375rem;
-      margin: 0.5rem 0;
-    }
-    
-    // Blockquotes
-    blockquote {
-      border-left: 4px solid var(--bs-secondary);
-      margin: 1rem 0;
-      padding-left: 1rem;
-      font-style: italic;
-      color: var(--bs-secondary);
-    }
-    
-    // Code blocks
-    pre {
-      background-color: var(--bs-light);
-      border-radius: 0.375rem;
+  &__editor {
+    .ProseMirror {
+      outline: none;
+      min-height: 200px;
       padding: 1rem;
-      margin: 0.5rem 0;
-      overflow-x: auto;
+      
+      &.ProseMirror-focused {
+        border-color: var(--bs-primary);
+      }
+      
+      // Headings
+      h1, h2, h3, h4, h5, h6 {
+        margin: 1rem 0 0.5rem 0;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      
+      h1 { font-size: 1.875rem; }
+      h2 { font-size: 1.5rem; }
+      h3 { font-size: 1.25rem; }
+      
+      // Paragraphs
+      p {
+        margin: 0.5rem 0;
+        line-height: 1.6;
+      }
+      
+      // Lists
+      ul, ol {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+      }
+      
+      li {
+        margin: 0.25rem 0;
+      }
+      
+      // Links
+      a {
+        color: var(--bs-primary);
+        text-decoration: underline;
+        
+        &:hover {
+          color: var(--bs-primary-dark);
+        }
+      }
+      
+      // Images
+      img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
+      }
+      
+      // Blockquotes
+      blockquote {
+        border-left: 4px solid var(--bs-secondary);
+        margin: 1rem 0;
+        padding-left: 1rem;
+        font-style: italic;
+        color: var(--bs-secondary);
+      }
+      
+      // Code blocks
+      pre {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        overflow-x: auto;
+        
+        code {
+          background: none;
+          padding: 0;
+          border: none;
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 0.9rem;
+          color: #333;
+        }
+      }
       
       code {
-        background: none;
-        padding: 0;
-        font-size: 0.875rem;
+        background-color: #f1f3f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9rem;
+        color: #d73a49;
       }
-    }
-    
-    code {
-      background-color: var(--bs-light);
-      padding: 0.125rem 0.25rem;
-      border-radius: 0.25rem;
-      font-size: 0.875rem;
-      font-family: 'Courier New', monospace;
-    }
-    
-    // Text alignment
-    .text-left { text-align: left; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    
-    // Placeholder
-    p.is-editor-empty:first-child::before {
-      content: attr(data-placeholder);
-      float: left;
-      color: var(--bs-secondary);
-      pointer-events: none;
-      height: 0;
+      
+      // Text alignment
+      .text-left { text-align: left; }
+      .text-center { text-align: center; }
+      .text-right { text-align: right; }
+      
+      // Placeholder
+      p.is-editor-empty:first-child::before {
+        content: attr(data-placeholder);
+        float: left;
+        color: var(--bs-secondary);
+        pointer-events: none;
+        height: 0;
+      }
     }
   }
   
   // Rich text editor toolbar
-  .rich-text-editor {
+  &__toolbar {
     .toolbar {
       .btn {
         transition: all 0.2s ease;
@@ -143,110 +151,192 @@
       }
     }
   }
+}
+
+// ===== POST CONTENT DISPLAY STYLES =====
+.forum-post-content {
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   
-  // Forum post content
-  .forum-post-content {
+  // Headings
+  h1, h2, h3, h4, h5, h6 {
+    margin: 1rem 0 0.5rem 0;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #333;
+  }
+  
+  h1 { font-size: 1.875rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  
+  // Paragraphs
+  p {
+    margin: 0.5rem 0;
     line-height: 1.6;
+  }
+  
+  // Lists
+  ul, ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+  }
+  
+  li {
+    margin: 0.25rem 0;
+  }
+  
+  // Links
+  a {
+    color: var(--bs-primary);
+    text-decoration: underline;
     
-    h1, h2, h3, h4, h5, h6 {
-      margin: 1rem 0 0.5rem 0;
-      font-weight: 600;
-      line-height: 1.25;
+    &:hover {
+      color: var(--bs-primary-dark);
     }
+  }
+  
+  // Images
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 0.5rem 0;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
     
-    h1 { font-size: 1.875rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  
+  // Enhanced blockquotes for post display
+  blockquote {
+    border-left: 4px solid #007bff;
+    background-color: #f8f9fa;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+    position: relative;
+    
+    &::before {
+      content: '"';
+      font-size: 3rem;
+      color: #007bff;
+      position: absolute;
+      top: -0.5rem;
+      left: 0.5rem;
+      font-family: serif;
+      opacity: 0.3;
+    }
     
     p {
-      margin: 0.5rem 0;
-    }
-    
-    ul, ol {
-      margin: 0.5rem 0;
-      padding-left: 1.5rem;
-    }
-    
-    li {
-      margin: 0.25rem 0;
-    }
-    
-    a {
-      color: var(--bs-primary);
-      text-decoration: underline;
-      
-      &:hover {
-        color: var(--bs-primary-dark);
-      }
-    }
-    
-    // Responsive image wrapper in forum posts
-    .responsive-image-wrapper {
-      margin: 1rem 0;
-      
-      .responsive-image-container {
-        max-width: 100%;
-        
-        @media (min-width: 768px) {
-          max-width: 80%;
-        }
-        
-        @media (min-width: 1200px) {
-          max-width: 70%;
-        }
-      }
-    }
-    
-    // Fallback for regular img tags
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 0.375rem;
-      margin: 0.5rem 0;
-      cursor: pointer;
-      transition: transform 0.2s ease-in-out;
-      
-      &:hover {
-        transform: scale(1.02);
-      }
-    }
-    
-    blockquote {
-      border-left: 4px solid var(--bs-secondary);
-      margin: 1rem 0;
-      padding-left: 1rem;
+      margin: 0;
       font-style: italic;
-      color: var(--bs-secondary);
+      color: #495057;
     }
     
-    pre {
-      background-color: var(--bs-light);
-      border-radius: 0.375rem;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      overflow-x: auto;
+    footer {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #6c757d;
       
-      code {
-        background: none;
-        padding: 0;
-        font-size: 0.875rem;
+      &::before {
+        content: '— ';
       }
+    }
+  }
+  
+  // Enhanced code blocks for post display
+  pre {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+    position: relative;
+    
+    &::before {
+      content: 'Code';
+      position: absolute;
+      top: 0.5rem;
+      right: 1rem;
+      font-size: 0.75rem;
+      color: #6c757d;
+      background: #e9ecef;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-weight: 500;
     }
     
     code {
-      background-color: var(--bs-light);
-      padding: 0.125rem 0.25rem;
-      border-radius: 0.25rem;
-      font-size: 0.875rem;
-      font-family: 'Courier New', monospace;
+      background: none;
+      padding: 0;
+      border: none;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      color: #333;
+      display: block;
+      white-space: pre-wrap;
     }
-    
-    .text-left { text-align: left; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
   }
   
-  // Spoiler images - improved styles
+  // Inline code
+  code {
+    background-color: #f1f3f4;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    color: #d73a49;
+  }
+  
+  // Text alignment
+  .text-left { text-align: left; }
+  .text-center { text-align: center; }
+  .text-right { text-align: right; }
+  
+  // Tables
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    
+    th, td {
+      border: 1px solid #dee2e6;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+  }
+  
+  // Responsive image wrapper
+  .responsive-image-wrapper {
+    margin: 1rem 0;
+    
+    .responsive-image-container {
+      max-width: 100%;
+      
+      @media (min-width: 768px) {
+        max-width: 80%;
+      }
+      
+      @media (min-width: 1200px) {
+        max-width: 70%;
+      }
+    }
+  }
+}
+
+// ===== SPOILER STYLES =====
+.forum-post-content {
+  // Spoiler images
   img[data-spoiler="true"] {
     position: relative;
     cursor: pointer;
@@ -287,67 +377,26 @@
     }
   }
   
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    
-    th, td {
-      border: 1px solid #dee2e6;
-      padding: 0.5rem;
-      text-align: left;
-    }
-    
-    th {
-      background-color: #f8f9fa;
-      font-weight: 600;
-    }
-  }
-}
-
-// Post content specific styles
-.forum-post-content {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-// Spoiler styles
-.spoiler-container {
-  margin: 1rem 0;
-  
-  .spoiler-toggle {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-  }
-  
-  .spoiler-content {
+  // Spoiler containers
+  .spoiler-container, div[data-spoiler] {
+    border: 2px dashed #ffc107;
+    background-color: #fff3cd;
     padding: 1rem;
-    border: 1px solid #dee2e6;
+    margin: 1rem 0;
     border-radius: 0.5rem;
-    background-color: #f8f9fa;
-    margin-top: 0.5rem;
+    position: relative;
     
-    // Ensure images inside spoilers are responsive
-    img {
-      max-width: 100%;
-      height: auto;
+    &::before {
+      content: '🚫 SPOILER';
+      position: absolute;
+      top: -0.5rem;
+      left: 1rem;
+      background: #ffc107;
+      color: #000;
+      padding: 0.25rem 0.5rem;
       border-radius: 0.25rem;
-    }
-    
-    // Style other content inside spoilers
-    p, div, h1, h2, h3, h4, h5, h6 {
-      margin-bottom: 0.5rem;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
+      font-size: 0.75rem;
+      font-weight: bold;
     }
   }
 } 

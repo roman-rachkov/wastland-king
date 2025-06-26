@@ -1,8 +1,8 @@
 import React from 'react';
 import { Row, Col, Card, Button, Badge, ButtonGroup } from 'react-bootstrap';
 import { PostApi } from '../../../types/Forum';
-import SpoilerImage from '../../../Components/SpoilerImage';
-import ForumImageProcessor from '../../../Components/ForumImageProcessor';
+import Spoiler from '../../../Components/Spoiler';
+import Post from '../../../Components/Post';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useSpoilerHandler } from '../../../hooks/useSpoilerHandler';
 
@@ -82,7 +82,7 @@ const PostItem: React.FC<PostItemProps> = ({
                     )}
                   </ButtonGroup>
                 </div>
-                <ForumImageProcessor 
+                <Post 
                   content={post.content}
                   className="forum-post-content"
                 />

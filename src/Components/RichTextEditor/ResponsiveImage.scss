@@ -229,4 +229,86 @@
   .spoiler-blur {
     filter: blur(15px);
   }
+}
+
+// Editor-specific styles for spoiler and blockquote
+.ProseMirror {
+  // Spoiler styles in editor
+  div[data-spoiler] {
+    border: 2px dashed #ffc107;
+    background-color: #fff3cd;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    position: relative;
+    
+    &::before {
+      content: '🚫 SPOILER';
+      position: absolute;
+      top: -0.5rem;
+      left: 1rem;
+      background: #ffc107;
+      color: #000;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+  }
+  
+  // Blockquote styles in editor
+  blockquote {
+    border-left: 4px solid #007bff;
+    background-color: #f8f9fa;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+    position: relative;
+    
+    &::before {
+      content: '"';
+      font-size: 3rem;
+      color: #007bff;
+      position: absolute;
+      top: -0.5rem;
+      left: 0.5rem;
+      font-family: serif;
+      opacity: 0.3;
+    }
+    
+    p {
+      margin: 0;
+      font-style: italic;
+      color: #495057;
+    }
+  }
+  
+  // Code block styles in editor
+  pre {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+    
+    code {
+      background: none;
+      padding: 0;
+      border: none;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      color: #333;
+    }
+  }
+  
+  // Inline code styles in editor
+  code {
+    background-color: #f1f3f4;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    color: #d73a49;
+  }
 } 

@@ -54,7 +54,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      console.log('RichTextEditor: HTML updated:', html.substring(0, 200) + '...');
+      onChange(html);
     },
     editorProps: {
       attributes: {
@@ -76,14 +78,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Sync editor content with value prop
   useEffect(() => {
-    if (editor) {
-      const currentContent = editor.getHTML();
-      console.log('RichTextEditor: Current content length:', currentContent.length, 'New value length:', value.length);
-      
-      if (value !== currentContent) {
-        console.log('RichTextEditor: Syncing content, value length:', value.length);
-        editor.commands.setContent(value || '');
-      }
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
     }
   }, [editor, value]);
 

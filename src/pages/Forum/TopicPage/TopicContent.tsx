@@ -1,7 +1,8 @@
 import React from 'react';
 import { Row, Col, Card, Button } from 'react-bootstrap';
+import Post from '../../../Components/Post';
 import { TopicApi } from '../../../types/Forum';
-import ForumImageProcessor from '../../../Components/ForumImageProcessor';
+import { formatDate } from '../../../utils/configCheck';
 
 interface TopicContentProps {
   topic: TopicApi;
@@ -48,7 +49,7 @@ const TopicContent: React.FC<TopicContentProps> = ({
                     Reply
                   </Button>
                 </div>
-                <ForumImageProcessor 
+                <Post 
                   content={topic.content}
                   className="forum-post-content"
                 />

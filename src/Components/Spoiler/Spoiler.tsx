@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 
-interface SpoilerImageProps {
+interface SpoilerProps {
   children: React.ReactNode;
   title?: string;
   className?: string;
 }
 
-const SpoilerImage: React.FC<SpoilerImageProps> = ({ 
+/**
+ * Spoiler component - creates interactive collapsible content
+ * Can contain any type of content (text, images, videos, etc.)
+ */
+const Spoiler: React.FC<SpoilerProps> = ({ 
   children, 
   title = 'Spoiler', 
   className = '' 
@@ -39,4 +43,4 @@ const SpoilerImage: React.FC<SpoilerImageProps> = ({
   );
 };
 
-export default SpoilerImage; 
+export default Spoiler; 
