@@ -141,26 +141,29 @@ const SchedulePage = () => {
     const isInDefense = isPlayerInDefense(selectedPlayer);
     
     // Find specific buildings and shifts where player is assigned
-    const defenseAssignments: Array<{building: string, shift: number, role: 'captain' | 'player'}> = [];
+    const defenseAssignments: Array<{building: string, shift: number, role: 'captain' | 'player', march: number}> = [];
     
     if (selectedSchedule?.buildings) {
       selectedSchedule.buildings.forEach(building => {
         // Check if player is captain
         if (building.capitan?.id === selectedPlayer.id) {
+          // Попробуем найти капитана в массиве players (иногда капитан тоже там есть)
+          const captainInPlayers = building.players.find(p => p.player.id === selectedPlayer.id);
           defenseAssignments.push({
             building: building.buildingName,
             shift: building.shift,
-            role: 'captain'
+            role: 'captain',
+            march: captainInPlayers ? captainInPlayers.march || 0 : selectedPlayer.marchSize || 0
           });
         }
-        
         // Check if player is in building players
         const playerInBuilding = building.players.find(p => p.player.id === selectedPlayer.id);
         if (playerInBuilding) {
           defenseAssignments.push({
             building: building.buildingName,
             shift: building.shift,
-            role: 'player'
+            role: 'player',
+            march: playerInBuilding.march || 0
           });
         }
       });
@@ -222,13 +225,16 @@ const SchedulePage = () => {
                 <OverlayTrigger
                   key={index}
                   placement="top"
-                  overlay={<Tooltip>Player assigned to {assignment.building} in shift {assignment.shift} as {assignment.role}</Tooltip>}
+                  overlay={<Tooltip>
+                    Player assigned to {assignment.building} in shift {assignment.shift} as {assignment.role}.<br/>
+                    March: {assignment.march}
+                  </Tooltip>}
                 >
                   <Badge 
                     bg={assignment.role === 'captain' ? "warning" : "info"}
                     className="me-1"
                   >
-                    {assignment.building} Shift {assignment.shift} ({assignment.role})
+                    {assignment.building} Shift {assignment.shift} ({assignment.role}) — March: {assignment.march}
                   </Badge>
                 </OverlayTrigger>
               ))}

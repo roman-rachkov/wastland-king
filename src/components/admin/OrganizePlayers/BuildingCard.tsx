@@ -160,60 +160,59 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
         )}
       </Card.Header>
       <Card.Body>
-        <Table striped size="sm" className="mb-0">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Troop Type</th>
-              <th>Tier</th>
-              <th>March</th>
-            </tr>
-          </thead>
-          <tbody>
-            {playersToDisplay.map(pl => (
-              <tr key={pl.player.id}>
-                <td>
-                  ({pl.player.alliance}){pl.player.name}
-                  {Array.isArray(attackPlayers) && attackPlayers.length > 0 && attackPlayers.some(a => String(a.id) === String(pl.player.id)) && (
-                    <Badge bg="danger" className="ms-1">Attack</Badge>
-                  )}
-                </td>
-                <td>
-                  {building.capitan?.id ? 
-                    getMatchingTroopTypes(pl.player, building.capitan).map(type => (
-                      <Badge key={type} bg="primary" className="me-1">
-                        {type}
-                      </Badge>
-                    )) :
-                    getTroopTypes(pl.player).map(type => (
-                      <Badge key={type} bg="primary" className="me-1">
-                        {type}
-                      </Badge>
-                    ))
-                  }
-                </td>
-                <td>
-                  <Badge bg="secondary">{pl.player.troopTier}</Badge>
-                </td>
-                <td>
-                  {pl.march}
-                  {pl.wasNormalized && (
-                    <Badge bg="warning" className="ms-1" title="March size was normalized (multiplied by 1000)">
-                      ⚠
-                    </Badge>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {playersToDisplay.length === 0 && (
+        <div className="table-responsive">
+          <Table striped size="sm" className="mb-0">
+            <thead>
               <tr>
-                <td colSpan={4} className="text-center text-muted">
-                  No players assigned
-                </td>
+                <th>Player</th>
+                <th>Troop Type / Tier</th>
+                <th>March</th>
               </tr>
-            )}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {playersToDisplay.map(pl => (
+                <tr key={pl.player.id}>
+                  <td>
+                    ({pl.player.alliance}){pl.player.name}
+                    {Array.isArray(attackPlayers) && attackPlayers.length > 0 && attackPlayers.some(a => String(a.id) === String(pl.player.id)) && (
+                      <Badge bg="danger" className="ms-1">Attack</Badge>
+                    )}
+                  </td>
+                  <td>
+                    {building.capitan?.id ? 
+                      getMatchingTroopTypes(pl.player, building.capitan).map(type => (
+                        <Badge key={type} bg="primary" className="me-1">
+                          {type}
+                        </Badge>
+                      )) :
+                      getTroopTypes(pl.player).map(type => (
+                        <Badge key={type} bg="primary" className="me-1">
+                          {type}
+                        </Badge>
+                      ))
+                    }
+                    <Badge bg="secondary" className="ms-1">{pl.player.troopTier}</Badge>
+                  </td>
+                  <td>
+                    {pl.march}
+                    {pl.wasNormalized && (
+                      <Badge bg="warning" className="ms-1" title="March size was normalized (multiplied by 1000)">
+                        ⚠
+                      </Badge>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {playersToDisplay.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center text-muted">
+                    No players assigned
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </div>
       </Card.Body>
       <Card.Footer>
         <div className="d-flex justify-content-between">

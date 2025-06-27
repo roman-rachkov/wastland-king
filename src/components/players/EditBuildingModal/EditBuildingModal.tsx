@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Alert, Badge } from 'react-bootstrap';
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { IBuildings, Shift, IAttackPlayer } from '../../../types/Buildings';
 import { Player } from '../../../types/Player';
 import { normalizeMarchSize } from '../../../utils/organizeUtils';
+import CaptainSelector from './CaptainSelector';
+import PlayerFilters from './PlayerFilters';
+import PlayersTable from './PlayersTable';
+import RallySizeInput from './RallySizeInput';
+import TotalMarchDisplay from './TotalMarchDisplay';
 
 interface EditBuildingModalProps {
   show: boolean;
@@ -52,9 +57,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       
       // Если здание в той же смене, добавляем всех игроков в список исключенных
       if (otherBuilding.shift === building.shift) {
-        // Добавляем капитана в отдельный список
+        // Добавляем капитана в отдельный список только если он не доступен для обеих смен
         if (otherBuilding.capitan?.id) {
-          newAssignedCaptainIds.add(otherBuilding.capitan.id);
+          const captain = availablePlayers.find(p => p.id === otherBuilding.capitan.id);
+          // Исключаем капитана только если он не доступен для обеих смен
+          if (captain && !(captain.firstShift && captain.secondShift)) {
+            newAssignedCaptainIds.add(otherBuilding.capitan.id);
+          }
         }
         // Добавляем обычных игроков
         otherBuilding.players.forEach(p => {
@@ -103,19 +112,59 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     const currentSelectedPlayerIds = new Set(selectedPlayers.map(sp => sp.playerId));
     
     return availablePlayers
-      .filter(p => 
-        p.isCapitan && 
-        (p[shiftKey] || (p.firstShift && p.secondShift)) &&
-        !assignedCaptainIds.has(p.id) &&
-        !assignedPlayerIds.has(p.id) && // Исключаем капитанов, которые уже назначены как игроки в другие здания
-        !currentSelectedPlayerIds.has(p.id) // Исключаем капитанов, которые выбраны как игроки в текущем здании
-      )
+      .filter(p => {
+        if (!p.isCapitan) return false;
+        
+        // Проверяем доступность для текущей смены
+        let isAvailableForShift = false;
+        
+        if (shiftCount === 2) {
+          // Для 2 смен: firstShift = смена 1, secondShift = смена 2
+          isAvailableForShift = shiftKey && p[shiftKey] || (p.firstShift && p.secondShift);
+        } else {
+          // Для 4 смен: firstShift = смены 1-2, secondShift = смены 3-4
+          if (building.shift === Shift.first || building.shift === Shift.second) {
+            // Смены 1-2
+            isAvailableForShift = p.firstShift || (p.firstShift && p.secondShift);
+          } else {
+            // Смены 3-4
+            isAvailableForShift = p.secondShift || (p.firstShift && p.secondShift);
+          }
+        }
+        
+        if (!isAvailableForShift) return false;
+        
+        // Исключаем капитанов, которые уже назначены в другие здания в той же смене
+        // Но только если они не доступны для обеих смен
+        if (assignedCaptainIds.has(p.id)) {
+          // Если капитан доступен для обеих смен, проверяем, назначен ли он в той же смене
+          if (p.firstShift && p.secondShift) {
+            // Для капитанов, доступных для обеих смен, проверяем только назначения в той же смене
+            const isAssignedInSameShift = allBuildings.some(b => 
+              b.shift === building.shift && 
+              b.capitan?.id === p.id &&
+              !(b.buildingName === building.buildingName && b.shift === building.shift)
+            );
+            if (isAssignedInSameShift) return false;
+          } else {
+            return false;
+          }
+        }
+        
+        // Исключаем капитанов, которые уже назначены как игроки в другие здания
+        if (assignedPlayerIds.has(p.id)) return false;
+        
+        // Исключаем капитанов, которые выбраны как игроки в текущем здании
+        if (currentSelectedPlayerIds.has(p.id)) return false;
+        
+        return true;
+      })
       .sort((a, b) => {
         // Сортируем по приоритету: сначала тир, потом размер марша
         if (b.troopTier !== a.troopTier) return b.troopTier - a.troopTier;
         return normalizeMarchSize(b.rallySize || 0).value - normalizeMarchSize(a.rallySize || 0).value;
       });
-  }, [building.shift, availablePlayers, assignedCaptainIds, assignedPlayerIds, selectedPlayers]);
+  }, [building.shift, availablePlayers, assignedCaptainIds, assignedPlayerIds, selectedPlayers, allBuildings, shiftCount]);
 
   const getCaptainInfo = (captain: Player) => {
     if (!captain) return null;
@@ -125,13 +174,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       <div className="mt-2">
         <small className="text-muted">
           <strong>Troop Types:</strong> {troopTypes.map(type => (
-            <Badge key={type} bg="primary" className="me-1">
+            <span key={type} className="badge bg-primary me-1">
               {type}
-            </Badge>
+            </span>
           ))}
-          <Badge bg="secondary" className="ms-2">Tier: {captain.troopTier}</Badge>
-          <Badge bg="info" className="ms-2">March: {captain.marchSize}</Badge>
-          <Badge bg="warning" className="ms-2">Rally: {captain.rallySize}</Badge>
+          <span className="badge bg-secondary ms-2">Tier: {captain.troopTier}</span>
+          <span className="badge bg-info ms-2">March: {captain.marchSize}</span>
+          <span className="badge bg-warning ms-2">Rally: {captain.rallySize}</span>
         </small>
       </div>
     );
@@ -177,10 +226,16 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       );
 
       // Collect captain IDs assigned to OTHER buildings in the same shift
+      // Но исключаем капитанов, доступных для обеих смен
       const assignedCaptainPlayerIds = new Set(
         allBuildings
           .filter(b => b.shift === shift && b.capitan && b.capitan.id && !(b.buildingName === building.buildingName && b.shift === building.shift))
           .map(b => b.capitan.id)
+          .filter(captainId => {
+            const captain = allPlayers.find(p => p.id === captainId);
+            // Исключаем капитанов, доступных для обеих смен
+            return captain && !(captain.firstShift && captain.secondShift);
+          })
       );
 
       // Combine all player IDs already occupied in OTHER buildings in this shift
@@ -203,7 +258,23 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         }
         
         // Check availability for the shift
-        if (!(shiftKey && p[shiftKey] || (p.firstShift && p.secondShift))) {
+        let isAvailableForShift = false;
+        
+        if (shiftCount === 2) {
+          // Для 2 смен: firstShift = смена 1, secondShift = смена 2
+          isAvailableForShift = shiftKey && p[shiftKey] || (p.firstShift && p.secondShift);
+        } else {
+          // Для 4 смен: firstShift = смены 1-2, secondShift = смены 3-4
+          if (shift === Shift.first || shift === Shift.second) {
+            // Смены 1-2
+            isAvailableForShift = p.firstShift || (p.firstShift && p.secondShift);
+          } else {
+            // Смены 3-4
+            isAvailableForShift = p.secondShift || (p.firstShift && p.secondShift);
+          }
+        }
+        
+        if (!isAvailableForShift) {
           return false;
         }
         
@@ -258,7 +329,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       });
     }
 
-    return filteredPlayers.sort((a, b) => (b.troopTier || 0) - (a.troopTier || 0));
+    return filteredPlayers;
   }, [selectedCaptain, building, availablePlayers, allBuildings, shiftCount, playerFilter, playerIdFilter, troopTypeFilter]);
 
   const handleCaptainChange = (captainId: string) => {
@@ -400,175 +471,48 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           </Alert>
         )}
 
-        
         <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Available Captains</Form.Label>
-            <Form.Select 
-              value={selectedCaptain} 
-              onChange={(e) => handleCaptainChange(e.target.value)}
-            >
-              <option value="">Select captain</option>
-              {captains.map(captain => {
-                const troopTypes = getTroopTypes(captain);
-                const troopTypesText = troopTypes.length > 0 ? ` - ${troopTypes.join(', ')}` : '';
-                return (
-                  <option key={captain.id} value={captain.id}>
-                    {captain.name} ({captain.alliance}) - Tier: {captain.troopTier}, Rally: {captain.rallySize}
-                    {troopTypesText}
-                    {attackPlayers.some(a => String(a.id) === String(captain.id)) && ' [Attack]'}
-                  </option>
-                );
-              })}
-            </Form.Select>
-            {captains.length === 0 && (
-              <Alert variant="warning" className="mt-2">
-                No available captains for this shift. All captains are already assigned to other buildings.
-              </Alert>
-            )}
-            {selectedCaptain && (
-              <div className="mt-2">
-                {(() => {
-                  const captain = captains.find(c => c.id === selectedCaptain);
-                  return captain ? getCaptainInfo(captain) : null;
-                })()}
-              </div>
-            )}
-          </Form.Group>
+          <CaptainSelector
+            selectedCaptain={selectedCaptain}
+            captains={captains}
+            attackPlayers={attackPlayers}
+            onCaptainChange={handleCaptainChange}
+            getTroopTypes={getTroopTypes}
+            getCaptainInfo={getCaptainInfo}
+          />
 
-          <Form.Group className="mb-3">
-            <Form.Label>Rally Size</Form.Label>
-            <Form.Control
-              type="number"
-              value={rallySize}
-              onChange={(e) => setRallySize(Number(e.target.value))}
-              min="0"
-            />
-          </Form.Group>
+          <RallySizeInput
+            rallySize={rallySize}
+            onRallySizeChange={setRallySize}
+          />
 
           <div className="mb-3">
             <h6>Available Players {!selectedCaptain && '(including available captains)'}</h6>
             
-            {/* Фильтры для игроков */}
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <Form.Group>
-                  <Form.Label>Filter by Name/Alliance</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search by name or alliance..."
-                    value={playerFilter}
-                    onChange={(e) => setPlayerFilter(e.target.value)}
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-6">
-                <Form.Group>
-                  <Form.Label>Filter by Troop Type</Form.Label>
-                  <Form.Select
-                    value={troopTypeFilter}
-                    onChange={(e) => setTroopTypeFilter(e.target.value)}
-                  >
-                    <option value="">All troop types</option>
-                    <option value="Fighter">Fighter</option>
-                    <option value="Shooter">Shooter</option>
-                    <option value="Rider">Rider</option>
-                  </Form.Select>
-                </Form.Group>
-              </div>
-            </div>
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <Form.Group>
-                  <Form.Label>Filter by Player ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search by ID..."
-                    value={playerIdFilter}
-                    onChange={(e) => setPlayerIdFilter(e.target.value)}
-                  />
-                </Form.Group>
-              </div>
-            </div>
+            <PlayerFilters
+              playerFilter={playerFilter}
+              playerIdFilter={playerIdFilter}
+              troopTypeFilter={troopTypeFilter}
+              onPlayerFilterChange={setPlayerFilter}
+              onPlayerIdFilterChange={setPlayerIdFilter}
+              onTroopTypeFilterChange={setTroopTypeFilter}
+            />
 
-            {players.length === 0 ? (
-              <Alert variant="info">
-                {selectedCaptain ? 
-                  'No available players or captains for this shift with matching troop types to the selected captain.' :
-                  'No available players for this shift. All players and captains are already assigned to other buildings in this shift.'
-                }
-              </Alert>
-            ) : (
-              <Table striped bordered hover size="sm">
-                <thead>
-                  <tr>
-                    <th>Select</th>
-                    <th>Player</th>
-                    <th>Troop Type</th>
-                    <th>Tier</th>
-                    <th>March Size</th>
-                    <th>Assigned March</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {players.map(player => {
-                    const isSelected = selectedPlayers.find(p => p.playerId === player.id);
-                    const assignedMarch = isSelected?.march || 0;
-                    
-                    return (
-                      <tr key={player.id}>
-                        <td>
-                          <Form.Check
-                            type="checkbox"
-                            checked={!!isSelected}
-                            onChange={() => handlePlayerToggle(player.id)}
-                          />
-                        </td>
-                        <td>
-                          {player.name} ({player.alliance})
-                          {attackPlayers.some(a => String(a.id) === String(player.id)) && (
-                            <Badge bg="danger" className="ms-1">Attack</Badge>
-                          )}
-                        </td>
-                        <td>
-                          {getTroopTypes(player).map(type => (
-                            <Badge key={type} bg="primary" className="me-1">
-                              {type}
-                            </Badge>
-                          ))}
-                        </td>
-                        <td>
-                          <Badge bg="secondary">{player.troopTier}</Badge>
-                        </td>
-                        <td>{normalizeMarchSize(player.marchSize).value}</td>
-                        <td>
-                          {isSelected && (
-                            <Form.Control
-                              type="number"
-                              value={assignedMarch}
-                              onChange={(e) => handleMarchChange(player.id, Number(e.target.value))}
-                              min="0"
-                              max={normalizeMarchSize(player.marchSize).value}
-                              size="sm"
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </Table>
-            )}
+            <PlayersTable
+              players={players}
+              selectedPlayers={selectedPlayers}
+              attackPlayers={attackPlayers}
+              selectedCaptain={selectedCaptain}
+              onPlayerToggle={handlePlayerToggle}
+              onMarchChange={handleMarchChange}
+              getTroopTypes={getTroopTypes}
+            />
           </div>
 
-          <Alert variant="info">
-            <strong>Total March Size:</strong> {totalMarch} / {rallySize}
-            {totalMarch > rallySize && (
-              <div className="text-danger mt-1">
-                Overflow by {totalMarch - rallySize} units!
-              </div>
-            )}
-          </Alert>
+          <TotalMarchDisplay
+            totalMarch={totalMarch}
+            rallySize={rallySize}
+          />
         </Form>
       </Modal.Body>
       <Modal.Footer>

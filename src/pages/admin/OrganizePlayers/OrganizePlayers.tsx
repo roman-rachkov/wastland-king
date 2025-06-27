@@ -1,5 +1,5 @@
 import { Alert, Row, Col } from "react-bootstrap";
-import EditBuildingModal from "../../../components/players/EditBuildingModal";
+import { EditBuildingModal } from "../../../components/players/EditBuildingModal";
 import AvailablePlayersList from "../../../components/players/AvailablePlayersList";
 import PlayersStats from "../../../components/players/PlayersStats";
 import { useOrganizePlayers } from "../../../hooks/useOrganizePlayers";

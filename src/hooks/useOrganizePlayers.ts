@@ -203,6 +203,28 @@ export const useOrganizePlayers = () => {
     }
   };
 
+  // Утилита для удаления undefined из объекта (только для settings.tabInfo)
+  function cleanSettings(settings: any) {
+    const cleaned = { ...settings };
+    if (cleaned.tabInfo === undefined) {
+      delete cleaned.tabInfo;
+    } else if (cleaned.tabInfo) {
+      // Если tabInfo есть, но внутри есть undefined
+      const tabInfo = { ...cleaned.tabInfo };
+      Object.keys(tabInfo).forEach(key => {
+        if (tabInfo[key] === undefined) {
+          delete tabInfo[key];
+        }
+      });
+      cleaned.tabInfo = tabInfo;
+      // Если tabInfo стал пустым, удаляем
+      if (Object.keys(tabInfo).length === 0) {
+        delete cleaned.tabInfo;
+      }
+    }
+    return cleaned;
+  }
+
   const handleSaveSchedule = async () => {
     const currentUser = getCurrentUser();
     if (!currentUser?.email) {
@@ -237,11 +259,11 @@ export const useOrganizePlayers = () => {
           ...existingSchedule,
           buildings: buildings,
           attackPlayers: allAttackPlayers,
-          settings: {
+          settings: cleanSettings({
             shiftDuration: settings.shiftDuration,
             allowAttackPlayersInDefense: settings.allowAttackPlayersInDefense,
             tabInfo: settings.tabInfo
-          },
+          }),
           updatedAt: new Date()
         };
         
@@ -254,11 +276,11 @@ export const useOrganizePlayers = () => {
           eventDate: dates.nextDate,
           buildings: buildings,
           attackPlayers: allAttackPlayers,
-          settings: {
+          settings: cleanSettings({
             shiftDuration: settings.shiftDuration,
             allowAttackPlayersInDefense: settings.allowAttackPlayersInDefense,
             tabInfo: settings.tabInfo
-          },
+          }),
           createdBy: currentUser.email,
         };
         
@@ -270,11 +292,11 @@ export const useOrganizePlayers = () => {
           eventDate: dates.nextDate,
           buildings: buildings,
           attackPlayers: allAttackPlayers,
-          settings: {
+          settings: cleanSettings({
             shiftDuration: settings.shiftDuration,
             allowAttackPlayersInDefense: settings.allowAttackPlayersInDefense,
             tabInfo: settings.tabInfo
-          },
+          }),
           createdBy: currentUser.email,
           createdAt: new Date(),
           updatedAt: new Date()

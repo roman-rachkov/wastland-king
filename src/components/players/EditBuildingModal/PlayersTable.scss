@@ -1,0 +1,17 @@
+.sortable-header {
+  position: relative;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  &:active {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.sortable-header span {
+  font-weight: bold;
+  color: #007bff;
+} 
