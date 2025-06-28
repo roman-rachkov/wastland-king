@@ -8,7 +8,6 @@ import ThanksPage from "./pages/ThanksPage";
 import SchedulePage from "./pages/Schedule";
 import Settings from "./pages/admin/Settings";
 import OrganizePlayers from "./pages/admin/OrganizePlayers";
-import PlayersList from "./pages/PlayersList";
 import Login from "./pages/admin/Login";
 import AdminUsers from "./pages/admin/Settings/AdminUsers";
 import ForumAuth from "./pages/ForumAuth";
@@ -107,7 +106,7 @@ function App() {
             <Routes>
               <Route path={'/'} element={<PublicLayout/>}>
                 <Route index element={<RegistrationForm/>}/>
-                <Route path={'players'} element={<PlayersList/>}/>
+                <Route path={'players'} element={<span>Temporray closed. Sorry</span>}/>
                 <Route path={'schedule'} element={<SchedulePage/>}/>
                 <Route path={'thanks'} element={<ThanksPage/>}/>
               </Route>
